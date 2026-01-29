@@ -255,13 +255,13 @@ try:
             # 헤더
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+                background: linear-gradient(135deg, #A8E6CF 0%, #FFD3E1 100%);
                 padding: 15px;
                 border-radius: 10px 10px 0 0;
                 color: white;
                 text-align: center;
             ">
-                <h3 style="margin: 0; color: white;">{person['이름']}</h3>
+                <h3 style="margin: 0; color: #2C3E50; font-weight: 600;">{person['이름']}</h3>
             </div>
             """, unsafe_allow_html=True)
             
@@ -351,13 +351,13 @@ try:
             # 헤더
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, #5DADE2 0%, #48A0DC 100%);
+                background: linear-gradient(135deg, #A8E6CF 0%, #FFD3E1 100%);
                 padding: 18px;
                 border-radius: 12px 12px 0 0;
                 color: white;
                 text-align: center;
             ">
-                <h3 style="margin: 0; color: white; font-size: 1.4em;">{person['이름']}</h3>
+                <h3 style="margin: 0; color: #2C3E50; font-size: 1.4em; font-weight: 600;">{person['이름']}</h3>
             </div>
             """, unsafe_allow_html=True)
             
