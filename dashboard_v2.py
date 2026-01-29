@@ -123,50 +123,30 @@ try:
         
         fig_weekly = go.Figure()
         
-        # 막대 그래프 (폭 좁게)
-        fig_weekly.add_trace(go.Bar(
+        # 선 그래프만
+        fig_weekly.add_trace(go.Scatter(
             x=weekly_stats['주차_표시'],
             y=weekly_stats['총제작량'],
+            mode='lines+markers',
             name='총 제작량',
-            marker_color='#4A90E2',
-            width=0.3
+            line=dict(color='#4A90E2', width=3),
+            marker=dict(size=10)
         ))
         
-        fig_weekly.add_trace(go.Bar(
+        fig_weekly.add_trace(go.Scatter(
             x=weekly_stats['주차_표시'],
             y=weekly_stats['신규제작량'],
+            mode='lines+markers',
             name='신규 제작량',
-            marker_color='#E67E22',
-            width=0.3
-        ))
-        
-        # 선 그래프 추가
-        fig_weekly.add_trace(go.Scatter(
-            x=weekly_stats['주차_표시'],
-            y=weekly_stats['총제작량'],
-            mode='lines+markers',
-            name='총 제작량 추이',
-            line=dict(color='#2E5C8A', width=2),
-            marker=dict(size=8),
-            showlegend=False
-        ))
-        
-        fig_weekly.add_trace(go.Scatter(
-            x=weekly_stats['주차_표시'],
-            y=weekly_stats['신규제작량'],
-            mode='lines+markers',
-            name='신규 제작량 추이',
-            line=dict(color='#C0652E', width=2),
-            marker=dict(size=8),
-            showlegend=False
+            line=dict(color='#E67E22', width=3),
+            marker=dict(size=10)
         ))
         
         fig_weekly.update_layout(
             height=400,
             xaxis_title="주차",
             yaxis_title="제작량 (개)",
-            barmode='group',
-            bargap=0.3
+            hovermode='x unified'
         )
         
         st.plotly_chart(fig_weekly, use_container_width=True)
@@ -194,50 +174,30 @@ try:
         
         fig_daily = go.Figure()
         
-        # 막대 그래프 (폭 좁게)
-        fig_daily.add_trace(go.Bar(
+        # 선 그래프만
+        fig_daily.add_trace(go.Scatter(
             x=daily_stats['날짜_표시'],
             y=daily_stats['총제작량'],
+            mode='lines+markers',
             name='총 제작량',
-            marker_color='#4A90E2',
-            width=0.4
+            line=dict(color='#4A90E2', width=3),
+            marker=dict(size=10)
         ))
         
-        fig_daily.add_trace(go.Bar(
+        fig_daily.add_trace(go.Scatter(
             x=daily_stats['날짜_표시'],
             y=daily_stats['신규제작량'],
+            mode='lines+markers',
             name='신규 제작량',
-            marker_color='#E67E22',
-            width=0.4
-        ))
-        
-        # 선 그래프 추가
-        fig_daily.add_trace(go.Scatter(
-            x=daily_stats['날짜_표시'],
-            y=daily_stats['총제작량'],
-            mode='lines+markers',
-            name='총 제작량 추이',
-            line=dict(color='#2E5C8A', width=2),
-            marker=dict(size=8),
-            showlegend=False
-        ))
-        
-        fig_daily.add_trace(go.Scatter(
-            x=daily_stats['날짜_표시'],
-            y=daily_stats['신규제작량'],
-            mode='lines+markers',
-            name='신규 제작량 추이',
-            line=dict(color='#C0652E', width=2),
-            marker=dict(size=8),
-            showlegend=False
+            line=dict(color='#E67E22', width=3),
+            marker=dict(size=10)
         ))
         
         fig_daily.update_layout(
             height=400,
             xaxis_title="날짜",
             yaxis_title="제작량 (개)",
-            barmode='group',
-            bargap=0.3
+            hovermode='x unified'
         )
         
         st.plotly_chart(fig_daily, use_container_width=True)
@@ -265,8 +225,12 @@ try:
         # 브랜드 목록
         brands = person_df['브랜드명'].unique().tolist()
         
+        # 총 제작량
+        total = person_df['콘텐츠 수'].sum()
+        
         return {
             '이름': person_name,
+            '총제작량': int(total),
             '신규': int(type_counts.get('신규/디벨롭', 0)),
             '베리': int(type_counts.get('베리', 0)),
             '리사이징': int(type_counts.get('리사이징', 0)),
@@ -288,88 +252,76 @@ try:
     cols = st.columns(3)
     for i, person in enumerate(image_stats):
         with cols[i % 3]:
+            # 헤더
             st.markdown(f"""
             <div style="
-                border: 2px solid #4A90E2;
-                border-radius: 10px;
-                overflow: hidden;
-                background: white;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+                padding: 15px;
+                border-radius: 10px 10px 0 0;
+                color: white;
+                text-align: center;
             ">
-                <!-- 이름 -->
-                <div style="
-                    background: #4A90E2;
-                    padding: 15px;
-                    text-align: center;
-                ">
-                    <h3 style="margin: 0; color: white; font-size: 1.3em;">{person['이름']}</h3>
-                </div>
-                
-                <!-- 신규/디벨롭 -->
-                <div style="
-                    background: #E67E22;
-                    padding: 30px 20px;
-                    text-align: center;
-                ">
-                    <div style="font-size: 3.5em; font-weight: bold; color: white; line-height: 1;">{person['신규']}</div>
-                    <div style="font-size: 1.2em; color: white; margin-top: 8px;">신규/디벨롭</div>
-                </div>
-                
-                <!-- 기타 유형 -->
-                <div style="
-                    padding: 20px;
-                    background: #f8f9fa;
-                ">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span style="color: #666;">베리</span>
-                            </td>
-                            <td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">
-                                <strong style="font-size: 1.3em; color: #333;">{person['베리']}</strong>
-                            </td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span style="color: #666;">리사이징</span>
-                            </td>
-                            <td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">
-                                <strong style="font-size: 1.3em; color: #333;">{person['리사이징']}</strong>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px;">
-                                <span style="color: #666;">지면확장</span>
-                            </td>
-                            <td style="padding: 8px; text-align: right;">
-                                <strong style="font-size: 1.3em; color: #333;">{person['지면확장']}</strong>
-                            </td>
-                            <td style="padding: 8px;">
-                                <span style="color: #666;">AI</span>
-                            </td>
-                            <td style="padding: 8px; text-align: right;">
-                                <strong style="font-size: 1.3em; color: #333;">{person['AI']}</strong>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <!-- 담당 브랜드 -->
-                <div style="
-                    padding: 20px;
-                    background: white;
-                    border-top: 2px solid #e0e0e0;
-                ">
-                    <div style="text-align: center; margin-bottom: 10px;">
-                        <span style="font-size: 2em; font-weight: bold; color: #4A90E2;">{person['브랜드수']}</span>
-                        <span style="font-size: 1em; color: #666; margin-left: 8px;">담당 브랜드</span>
+                <h3 style="margin: 0; color: white;">{person['이름']}</h3>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # 신규/디벨롭 + 총제작량
+            st.markdown(f"""
+            <div style="
+                background: linear-gradient(135deg, #E67E22 0%, #D35400 100%);
+                padding: 30px 20px;
+                text-align: center;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            ">
+                <h1 style="margin: 0; color: white; font-size: 3.5em; font-weight: bold;">{person['신규']}</h1>
+                <p style="margin: 10px 0 0 0; color: white; font-size: 1.3em; font-weight: 600;">신규/디벨롭</p>
+                <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.9); font-size: 1em;">총 {person['총제작량']}개 제작</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # 기타 유형들
+            st.markdown(f"""
+            <div style="
+                background: #f8f9fa;
+                padding: 20px;
+                border-left: 5px solid #6c757d;
+            ">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
+                        <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['베리']}</div>
+                        <div style="font-size: 0.9em; color: #6c757d;">베리</div>
                     </div>
-                    <div style="
-                        font-size: 0.85em;
-                        color: #888;
-                        text-align: center;
-                        line-height: 1.6;
-                    ">
-                        {", ".join(person['브랜드목록'])}
+                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
+                        <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['리사이징']}</div>
+                        <div style="font-size: 0.9em; color: #6c757d;">리사이징</div>
                     </div>
+                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
+                        <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['지면확장']}</div>
+                        <div style="font-size: 0.9em; color: #6c757d;">지면확장</div>
+                    </div>
+                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
+                        <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['AI']}</div>
+                        <div style="font-size: 0.9em; color: #6c757d;">AI</div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # 담당 브랜드
+            brands_text = ", ".join(person['브랜드목록'])
+            st.markdown(f"""
+            <div style="
+                background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+                padding: 20px;
+                border-radius: 0 0 10px 10px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            ">
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <span style="font-size: 2.5em; font-weight: bold; color: #2c3e50;">{person['브랜드수']}</span>
+                    <span style="font-size: 1.2em; color: #34495e; margin-left: 10px;">담당 브랜드</span>
+                </div>
+                <div style="font-size: 0.9em; color: #555; text-align: center; line-height: 1.6;">
+                    {brands_text}
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -389,88 +341,76 @@ try:
     cols = st.columns(3)
     for i, person in enumerate(video_stats):
         with cols[i % 3]:
+            # 헤더
             st.markdown(f"""
             <div style="
-                border: 2px solid #4A90E2;
-                border-radius: 10px;
-                overflow: hidden;
-                background: white;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+                padding: 15px;
+                border-radius: 10px 10px 0 0;
+                color: white;
+                text-align: center;
             ">
-                <!-- 이름 -->
-                <div style="
-                    background: #4A90E2;
-                    padding: 15px;
-                    text-align: center;
-                ">
-                    <h3 style="margin: 0; color: white; font-size: 1.3em;">{person['이름']}</h3>
-                </div>
-                
-                <!-- 신규/디벨롭 -->
-                <div style="
-                    background: #E67E22;
-                    padding: 30px 20px;
-                    text-align: center;
-                ">
-                    <div style="font-size: 3.5em; font-weight: bold; color: white; line-height: 1;">{person['신규']}</div>
-                    <div style="font-size: 1.2em; color: white; margin-top: 8px;">신규/디벨롭</div>
-                </div>
-                
-                <!-- 기타 유형 -->
-                <div style="
-                    padding: 20px;
-                    background: #f8f9fa;
-                ">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span style="color: #666;">베리</span>
-                            </td>
-                            <td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">
-                                <strong style="font-size: 1.3em; color: #333;">{person['베리']}</strong>
-                            </td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">
-                                <span style="color: #666;">리사이징</span>
-                            </td>
-                            <td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">
-                                <strong style="font-size: 1.3em; color: #333;">{person['리사이징']}</strong>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px;">
-                                <span style="color: #666;">지면확장</span>
-                            </td>
-                            <td style="padding: 8px; text-align: right;">
-                                <strong style="font-size: 1.3em; color: #333;">{person['지면확장']}</strong>
-                            </td>
-                            <td style="padding: 8px;">
-                                <span style="color: #666;">AI</span>
-                            </td>
-                            <td style="padding: 8px; text-align: right;">
-                                <strong style="font-size: 1.3em; color: #333;">{person['AI']}</strong>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <!-- 담당 브랜드 -->
-                <div style="
-                    padding: 20px;
-                    background: white;
-                    border-top: 2px solid #e0e0e0;
-                ">
-                    <div style="text-align: center; margin-bottom: 10px;">
-                        <span style="font-size: 2em; font-weight: bold; color: #4A90E2;">{person['브랜드수']}</span>
-                        <span style="font-size: 1em; color: #666; margin-left: 8px;">담당 브랜드</span>
+                <h3 style="margin: 0; color: white;">{person['이름']}</h3>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # 신규/디벨롭 + 총제작량
+            st.markdown(f"""
+            <div style="
+                background: linear-gradient(135deg, #E67E22 0%, #D35400 100%);
+                padding: 30px 20px;
+                text-align: center;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            ">
+                <h1 style="margin: 0; color: white; font-size: 3.5em; font-weight: bold;">{person['신규']}</h1>
+                <p style="margin: 10px 0 0 0; color: white; font-size: 1.3em; font-weight: 600;">신규/디벨롭</p>
+                <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.9); font-size: 1em;">총 {person['총제작량']}개 제작</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # 기타 유형들
+            st.markdown(f"""
+            <div style="
+                background: #f8f9fa;
+                padding: 20px;
+                border-left: 5px solid #6c757d;
+            ">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
+                        <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['베리']}</div>
+                        <div style="font-size: 0.9em; color: #6c757d;">베리</div>
                     </div>
-                    <div style="
-                        font-size: 0.85em;
-                        color: #888;
-                        text-align: center;
-                        line-height: 1.6;
-                    ">
-                        {", ".join(person['브랜드목록'])}
+                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
+                        <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['리사이징']}</div>
+                        <div style="font-size: 0.9em; color: #6c757d;">리사이징</div>
                     </div>
+                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
+                        <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['지면확장']}</div>
+                        <div style="font-size: 0.9em; color: #6c757d;">지면확장</div>
+                    </div>
+                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
+                        <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['AI']}</div>
+                        <div style="font-size: 0.9em; color: #6c757d;">AI</div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # 담당 브랜드
+            brands_text = ", ".join(person['브랜드목록'])
+            st.markdown(f"""
+            <div style="
+                background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+                padding: 20px;
+                border-radius: 0 0 10px 10px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            ">
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <span style="font-size: 2.5em; font-weight: bold; color: #2c3e50;">{person['브랜드수']}</span>
+                    <span style="font-size: 1.2em; color: #34495e; margin-left: 10px;">담당 브랜드</span>
+                </div>
+                <div style="font-size: 0.9em; color: #555; text-align: center; line-height: 1.6;">
+                    {brands_text}
                 </div>
             </div>
             """, unsafe_allow_html=True)
