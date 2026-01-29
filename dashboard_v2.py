@@ -265,17 +265,25 @@ try:
             </div>
             """, unsafe_allow_html=True)
             
-            # 신규/디벨롭 + 총제작량
+            
+            # 신규/디벨롭 + 총제작량 (분홍 배경, 나란히)
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, #E67E22 0%, #D35400 100%);
-                padding: 30px 20px;
+                background: #FFD4D4;
+                padding: 25px 15px;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
                 text-align: center;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             ">
-                <h1 style="margin: 0; color: white; font-size: 3.5em; font-weight: bold;">{person['신규']}</h1>
-                <p style="margin: 10px 0 0 0; color: white; font-size: 1.3em; font-weight: 600;">신규/디벨롭</p>
-                <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.9); font-size: 1em;">총 {person['총제작량']}개 제작</p>
+                <div>
+                    <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">신규/디벨롭</div>
+                    <div style="font-size: 3.5em; font-weight: bold; color: #000; line-height: 1;">{person['신규']}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">총 제작량</div>
+                    <div style="font-size: 3.5em; font-weight: bold; color: #000; line-height: 1;">{person['총제작량']}</div>
+                </div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -284,9 +292,8 @@ try:
             <div style="
                 background: #f8f9fa;
                 padding: 20px;
-                border-left: 5px solid #6c757d;
             ">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
                         <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['베리']}</div>
                         <div style="font-size: 0.9em; color: #6c757d;">베리</div>
@@ -307,20 +314,20 @@ try:
             </div>
             """, unsafe_allow_html=True)
             
-            # 담당 브랜드
+            # 담당 브랜드 (민트/핑크 그라데이션)
             brands_text = ", ".join(person['브랜드목록'])
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-                padding: 20px;
+                background: linear-gradient(135deg, #D4F1F4 0%, #FFE8E8 100%);
+                padding: 20px 15px;
                 border-radius: 0 0 10px 10px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                text-align: center;
             ">
-                <div style="text-align: center; margin-bottom: 10px;">
+                <div style="margin-bottom: 10px;">
                     <span style="font-size: 2.5em; font-weight: bold; color: #2c3e50;">{person['브랜드수']}</span>
-                    <span style="font-size: 1.2em; color: #34495e; margin-left: 10px;">담당 브랜드</span>
+                    <span style="font-size: 1em; color: #34495e; margin-left: 10px;">담당 브랜드</span>
                 </div>
-                <div style="font-size: 0.9em; color: #555; text-align: center; line-height: 1.6;">
+                <div style="font-size: 0.85em; color: #555; text-align: center; line-height: 1.6;">
                     {brands_text}
                 </div>
             </div>
@@ -354,17 +361,24 @@ try:
             </div>
             """, unsafe_allow_html=True)
             
-            # 신규/디벨롭 + 총제작량
+            # 신규/디벨롭 + 총제작량 (분홍 배경, 나란히)
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, #E67E22 0%, #D35400 100%);
-                padding: 30px 20px;
+                background: #FFD4D4;
+                padding: 25px 15px;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
                 text-align: center;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             ">
-                <h1 style="margin: 0; color: white; font-size: 3.5em; font-weight: bold;">{person['신규']}</h1>
-                <p style="margin: 10px 0 0 0; color: white; font-size: 1.3em; font-weight: 600;">신규/디벨롭</p>
-                <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.9); font-size: 1em;">총 {person['총제작량']}개 제작</p>
+                <div>
+                    <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">신규/디벨롭</div>
+                    <div style="font-size: 3.5em; font-weight: bold; color: #000; line-height: 1;">{person['신규']}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">총 제작량</div>
+                    <div style="font-size: 3.5em; font-weight: bold; color: #000; line-height: 1;">{person['총제작량']}</div>
+                </div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -373,9 +387,8 @@ try:
             <div style="
                 background: #f8f9fa;
                 padding: 20px;
-                border-left: 5px solid #6c757d;
             ">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
                         <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['베리']}</div>
                         <div style="font-size: 0.9em; color: #6c757d;">베리</div>
@@ -396,20 +409,20 @@ try:
             </div>
             """, unsafe_allow_html=True)
             
-            # 담당 브랜드
+            # 담당 브랜드 (민트/핑크 그라데이션)
             brands_text = ", ".join(person['브랜드목록'])
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-                padding: 20px;
+                background: linear-gradient(135deg, #D4F1F4 0%, #FFE8E8 100%);
+                padding: 20px 15px;
                 border-radius: 0 0 10px 10px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                text-align: center;
             ">
-                <div style="text-align: center; margin-bottom: 10px;">
+                <div style="margin-bottom: 10px;">
                     <span style="font-size: 2.5em; font-weight: bold; color: #2c3e50;">{person['브랜드수']}</span>
-                    <span style="font-size: 1.2em; color: #34495e; margin-left: 10px;">담당 브랜드</span>
+                    <span style="font-size: 1em; color: #34495e; margin-left: 10px;">담당 브랜드</span>
                 </div>
-                <div style="font-size: 0.9em; color: #555; text-align: center; line-height: 1.6;">
+                <div style="font-size: 0.85em; color: #555; text-align: center; line-height: 1.6;">
                     {brands_text}
                 </div>
             </div>
