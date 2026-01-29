@@ -255,7 +255,7 @@ try:
             # 헤더
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, #A8E6CF 0%, #FFD3E1 100%);
+                background: #FFE8F0;
                 padding: 15px;
                 border-radius: 10px 10px 0 0;
                 color: white;
@@ -351,7 +351,7 @@ try:
             # 헤더
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, #A8E6CF 0%, #FFD3E1 100%);
+                background: #FFE8F0;
                 padding: 18px;
                 border-radius: 12px 12px 0 0;
                 color: white;
