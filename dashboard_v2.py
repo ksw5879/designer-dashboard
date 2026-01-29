@@ -119,7 +119,32 @@ try:
         weekly_new.columns = ['주차', '신규제작량']
         
         weekly_stats = pd.merge(weekly_total, weekly_new, on='주차', how='left').fillna(0)
-        weekly_stats['주차_표시'] = weekly_stats['주차'].astype(str).str[-2:] + '주차'
+        
+        # 주차별 날짜 범위 계산
+        def format_week_label(week_period):
+            # 주차의 시작일과 종료일 계산
+            start_date = week_period.start_time
+            end_date = week_period.end_time
+            
+            # 해당 주차의 실제 데이터가 있는 날짜 범위
+            week_data = df[df['주차_정렬용'] == week_period]
+            if len(week_data) > 0:
+                actual_start = week_data['날짜_변환'].min()
+                actual_end = week_data['날짜_변환'].max()
+                
+                # "26년 1월 5주차 (1/26~2/1)" 형식
+                year = actual_start.strftime('%y')
+                month = actual_start.strftime('%m').lstrip('0')
+                start_day = actual_start.strftime('%m/%d').lstrip('0').replace('/0', '/')
+                end_day = actual_end.strftime('%m/%d').lstrip('0').replace('/0', '/')
+                
+                # 주차 번호 계산
+                week_num = actual_start.isocalendar()[1]
+                
+                return f"{year}년 {month}월 {week_num}주차<br>({start_day}~{end_day})"
+            return str(week_period)
+        
+        weekly_stats['주차_표시'] = weekly_stats['주차'].apply(format_week_label)
         weekly_stats = weekly_stats.sort_values('주차')
         
         fig_weekly = go.Figure()
