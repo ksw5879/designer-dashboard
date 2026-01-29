@@ -14,7 +14,7 @@ st.set_page_config(
 
 st.title("📊 디자이너 리소스 관리 대시보드")
 
-# 디자이너 분류 (Secrets에서 읽기, 없으면 기본값)
+# 디자이너 분류
 try:
     IMAGE_DESIGNERS = st.secrets.get("image_designers", ["박유정", "권지연", "안서현", "도혜진", "김성웅"])
     VIDEO_DESIGNERS = st.secrets.get("video_designers", ["은누리", "박시은", "이재호", "이현성"])
@@ -98,106 +98,149 @@ try:
     # ============================================
     st.markdown("---")
     
-    # 주차 선택 (그래프와 카드 모두에 적용)
+    # 주차 선택
     available_weeks = sorted(df['주차_정렬용'].unique(), reverse=True)
     week_options = ['전체'] + [str(w) for w in available_weeks]
     selected_week = st.selectbox("📅 주차 선택", options=week_options, index=0)
     
-    col_graph1, col_graph2 = st.columns(2)
+    # 그래프 1: 주차별 그래프 (월단위) - 위
+    st.markdown("### 📊 주차별 제작량 (월단위)")
     
-    # 그래프 1: 일별 그래프 (선택한 주차)
-    with col_graph1:
-        st.markdown("### 📅 일별 제작량 (주차별)")
+    available_months = sorted(df['월'].unique(), reverse=True)
+    if len(available_months) > 0:
+        recent_month = available_months[0]
+        month_df = df[df['월'] == recent_month]
         
-        if selected_week == '전체':
-            st.info("특정 주차를 선택하면 일별 그래프가 표시됩니다.")
-        else:
-            selected_week_period = pd.Period(selected_week, freq='W')
-            week_df = df[df['주차_정렬용'] == selected_week_period]
-            
-            daily_total = week_df.groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
-            daily_total.columns = ['날짜', '총제작량']
-            daily_total['날짜_표시'] = daily_total['날짜'].dt.strftime('%m/%d')
-            
-            daily_new = week_df[week_df['신규여부'] == True].groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
-            daily_new.columns = ['날짜', '신규제작량']
-            
-            daily_stats = pd.merge(daily_total, daily_new, on='날짜', how='left').fillna(0)
-            daily_stats = daily_stats.sort_values('날짜')
-            
-            fig_daily = go.Figure()
-            
-            fig_daily.add_trace(go.Scatter(
-                x=daily_stats['날짜_표시'],
-                y=daily_stats['총제작량'],
-                mode='lines+markers',
-                name='총 제작량',
-                line=dict(color='#1f77b4', width=3),
-                marker=dict(size=10)
-            ))
-            
-            fig_daily.add_trace(go.Scatter(
-                x=daily_stats['날짜_표시'],
-                y=daily_stats['신규제작량'],
-                mode='lines+markers',
-                name='신규 제작량',
-                line=dict(color='#ff7f0e', width=3),
-                marker=dict(size=10)
-            ))
-            
-            fig_daily.update_layout(
-                height=350,
-                xaxis_title="날짜",
-                yaxis_title="제작량 (개)",
-                hovermode='x unified'
-            )
-            
-            st.plotly_chart(fig_daily, use_container_width=True)
+        weekly_total = month_df.groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
+        weekly_total.columns = ['주차', '총제작량']
+        
+        weekly_new = month_df[month_df['신규여부'] == True].groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
+        weekly_new.columns = ['주차', '신규제작량']
+        
+        weekly_stats = pd.merge(weekly_total, weekly_new, on='주차', how='left').fillna(0)
+        weekly_stats['주차_표시'] = weekly_stats['주차'].astype(str).str[-2:] + '주차'
+        weekly_stats = weekly_stats.sort_values('주차')
+        
+        fig_weekly = go.Figure()
+        
+        # 막대 그래프 (폭 좁게)
+        fig_weekly.add_trace(go.Bar(
+            x=weekly_stats['주차_표시'],
+            y=weekly_stats['총제작량'],
+            name='총 제작량',
+            marker_color='#4A90E2',
+            width=0.3
+        ))
+        
+        fig_weekly.add_trace(go.Bar(
+            x=weekly_stats['주차_표시'],
+            y=weekly_stats['신규제작량'],
+            name='신규 제작량',
+            marker_color='#E67E22',
+            width=0.3
+        ))
+        
+        # 선 그래프 추가
+        fig_weekly.add_trace(go.Scatter(
+            x=weekly_stats['주차_표시'],
+            y=weekly_stats['총제작량'],
+            mode='lines+markers',
+            name='총 제작량 추이',
+            line=dict(color='#2E5C8A', width=2),
+            marker=dict(size=8),
+            showlegend=False
+        ))
+        
+        fig_weekly.add_trace(go.Scatter(
+            x=weekly_stats['주차_표시'],
+            y=weekly_stats['신규제작량'],
+            mode='lines+markers',
+            name='신규 제작량 추이',
+            line=dict(color='#C0652E', width=2),
+            marker=dict(size=8),
+            showlegend=False
+        ))
+        
+        fig_weekly.update_layout(
+            height=400,
+            xaxis_title="주차",
+            yaxis_title="제작량 (개)",
+            barmode='group',
+            bargap=0.3
+        )
+        
+        st.plotly_chart(fig_weekly, use_container_width=True)
     
-    # 그래프 2: 주차별 그래프 (월단위)
-    with col_graph2:
-        st.markdown("### 📊 주차별 제작량 (월단위)")
+    st.markdown("---")
+    
+    # 그래프 2: 일별 그래프 (주차별) - 아래
+    st.markdown("### 📅 일별 제작량 (주차별)")
+    
+    if selected_week == '전체':
+        st.info("특정 주차를 선택하면 일별 그래프가 표시됩니다.")
+    else:
+        selected_week_period = pd.Period(selected_week, freq='W')
+        week_df = df[df['주차_정렬용'] == selected_week_period]
         
-        # 최근 월 선택
-        available_months = sorted(df['월'].unique(), reverse=True)
-        if len(available_months) > 0:
-            recent_month = available_months[0]
-            month_df = df[df['월'] == recent_month]
-            
-            weekly_total = month_df.groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
-            weekly_total.columns = ['주차', '총제작량']
-            
-            weekly_new = month_df[month_df['신규여부'] == True].groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
-            weekly_new.columns = ['주차', '신규제작량']
-            
-            weekly_stats = pd.merge(weekly_total, weekly_new, on='주차', how='left').fillna(0)
-            weekly_stats['주차_표시'] = weekly_stats['주차'].astype(str).str[-2:]
-            weekly_stats = weekly_stats.sort_values('주차')
-            
-            fig_weekly = go.Figure()
-            
-            fig_weekly.add_trace(go.Bar(
-                x=weekly_stats['주차_표시'],
-                y=weekly_stats['총제작량'],
-                name='총 제작량',
-                marker_color='#1f77b4'
-            ))
-            
-            fig_weekly.add_trace(go.Bar(
-                x=weekly_stats['주차_표시'],
-                y=weekly_stats['신규제작량'],
-                name='신규 제작량',
-                marker_color='#ff7f0e'
-            ))
-            
-            fig_weekly.update_layout(
-                height=350,
-                xaxis_title="주차",
-                yaxis_title="제작량 (개)",
-                barmode='group'
-            )
-            
-            st.plotly_chart(fig_weekly, use_container_width=True)
+        daily_total = week_df.groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
+        daily_total.columns = ['날짜', '총제작량']
+        daily_total['날짜_표시'] = daily_total['날짜'].dt.strftime('%m/%d')
+        
+        daily_new = week_df[week_df['신규여부'] == True].groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
+        daily_new.columns = ['날짜', '신규제작량']
+        
+        daily_stats = pd.merge(daily_total, daily_new, on='날짜', how='left').fillna(0)
+        daily_stats = daily_stats.sort_values('날짜')
+        
+        fig_daily = go.Figure()
+        
+        # 막대 그래프 (폭 좁게)
+        fig_daily.add_trace(go.Bar(
+            x=daily_stats['날짜_표시'],
+            y=daily_stats['총제작량'],
+            name='총 제작량',
+            marker_color='#4A90E2',
+            width=0.4
+        ))
+        
+        fig_daily.add_trace(go.Bar(
+            x=daily_stats['날짜_표시'],
+            y=daily_stats['신규제작량'],
+            name='신규 제작량',
+            marker_color='#E67E22',
+            width=0.4
+        ))
+        
+        # 선 그래프 추가
+        fig_daily.add_trace(go.Scatter(
+            x=daily_stats['날짜_표시'],
+            y=daily_stats['총제작량'],
+            mode='lines+markers',
+            name='총 제작량 추이',
+            line=dict(color='#2E5C8A', width=2),
+            marker=dict(size=8),
+            showlegend=False
+        ))
+        
+        fig_daily.add_trace(go.Scatter(
+            x=daily_stats['날짜_표시'],
+            y=daily_stats['신규제작량'],
+            mode='lines+markers',
+            name='신규 제작량 추이',
+            line=dict(color='#C0652E', width=2),
+            marker=dict(size=8),
+            showlegend=False
+        ))
+        
+        fig_daily.update_layout(
+            height=400,
+            xaxis_title="날짜",
+            yaxis_title="제작량 (개)",
+            barmode='group',
+            bargap=0.3
+        )
+        
+        st.plotly_chart(fig_daily, use_container_width=True)
     
     # ============================================
     # 사람별 카드
@@ -245,74 +288,88 @@ try:
     cols = st.columns(3)
     for i, person in enumerate(image_stats):
         with cols[i % 3]:
-            # 신규/디벨롭 (가장 크게, 빨간색)
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                padding: 15px;
-                border-radius: 10px 10px 0 0;
-                color: white;
-                text-align: center;
+                border: 2px solid #4A90E2;
+                border-radius: 10px;
+                overflow: hidden;
+                background: white;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             ">
-                <h3 style="margin: 0; color: white;">{person['이름']}</h3>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-                padding: 40px 20px;
-                text-align: center;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            ">
-                <h1 style="margin: 0; color: white; font-size: 4em; font-weight: bold;">{person['신규']}</h1>
-                <p style="margin: 10px 0 0 0; color: white; font-size: 1.5em; font-weight: 600;">신규/디벨롭</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # 기타 유형들
-            st.markdown(f"""
-            <div style="
-                background: #f8f9fa;
-                padding: 20px;
-                border-left: 5px solid #6c757d;
-            ">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
-                        <div style="font-size: 1.8em; font-weight: bold; color: #17a2b8;">{person['베리']}</div>
-                        <div style="font-size: 0.9em; color: #6c757d;">베리</div>
-                    </div>
-                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
-                        <div style="font-size: 1.8em; font-weight: bold; color: #28a745;">{person['리사이징']}</div>
-                        <div style="font-size: 0.9em; color: #6c757d;">리사이징</div>
-                    </div>
-                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
-                        <div style="font-size: 1.8em; font-weight: bold; color: #ffc107;">{person['지면확장']}</div>
-                        <div style="font-size: 0.9em; color: #6c757d;">지면확장</div>
-                    </div>
-                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
-                        <div style="font-size: 1.8em; font-weight: bold; color: #6f42c1;">{person['AI']}</div>
-                        <div style="font-size: 0.9em; color: #6c757d;">AI</div>
-                    </div>
+                <!-- 이름 -->
+                <div style="
+                    background: #4A90E2;
+                    padding: 15px;
+                    text-align: center;
+                ">
+                    <h3 style="margin: 0; color: white; font-size: 1.3em;">{person['이름']}</h3>
                 </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # 담당 브랜드
-            brands_text = ", ".join(person['브랜드목록'])
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-                padding: 20px;
-                border-radius: 0 0 10px 10px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            ">
-                <div style="text-align: center; margin-bottom: 10px;">
-                    <span style="font-size: 2.5em; font-weight: bold; color: #2c3e50;">{person['브랜드수']}</span>
-                    <span style="font-size: 1.2em; color: #34495e; margin-left: 10px;">담당 브랜드</span>
+                
+                <!-- 신규/디벨롭 -->
+                <div style="
+                    background: #E67E22;
+                    padding: 30px 20px;
+                    text-align: center;
+                ">
+                    <div style="font-size: 3.5em; font-weight: bold; color: white; line-height: 1;">{person['신규']}</div>
+                    <div style="font-size: 1.2em; color: white; margin-top: 8px;">신규/디벨롭</div>
                 </div>
-                <div style="font-size: 0.9em; color: #555; text-align: center; line-height: 1.6;">
-                    {brands_text}
+                
+                <!-- 기타 유형 -->
+                <div style="
+                    padding: 20px;
+                    background: #f8f9fa;
+                ">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span style="color: #666;">베리</span>
+                            </td>
+                            <td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">
+                                <strong style="font-size: 1.3em; color: #333;">{person['베리']}</strong>
+                            </td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span style="color: #666;">리사이징</span>
+                            </td>
+                            <td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">
+                                <strong style="font-size: 1.3em; color: #333;">{person['리사이징']}</strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px;">
+                                <span style="color: #666;">지면확장</span>
+                            </td>
+                            <td style="padding: 8px; text-align: right;">
+                                <strong style="font-size: 1.3em; color: #333;">{person['지면확장']}</strong>
+                            </td>
+                            <td style="padding: 8px;">
+                                <span style="color: #666;">AI</span>
+                            </td>
+                            <td style="padding: 8px; text-align: right;">
+                                <strong style="font-size: 1.3em; color: #333;">{person['AI']}</strong>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <!-- 담당 브랜드 -->
+                <div style="
+                    padding: 20px;
+                    background: white;
+                    border-top: 2px solid #e0e0e0;
+                ">
+                    <div style="text-align: center; margin-bottom: 10px;">
+                        <span style="font-size: 2em; font-weight: bold; color: #4A90E2;">{person['브랜드수']}</span>
+                        <span style="font-size: 1em; color: #666; margin-left: 8px;">담당 브랜드</span>
+                    </div>
+                    <div style="
+                        font-size: 0.85em;
+                        color: #888;
+                        text-align: center;
+                        line-height: 1.6;
+                    ">
+                        {", ".join(person['브랜드목록'])}
+                    </div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -332,74 +389,88 @@ try:
     cols = st.columns(3)
     for i, person in enumerate(video_stats):
         with cols[i % 3]:
-            # 신규/디벨롭 (가장 크게, 빨간색)
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                padding: 15px;
-                border-radius: 10px 10px 0 0;
-                color: white;
-                text-align: center;
+                border: 2px solid #4A90E2;
+                border-radius: 10px;
+                overflow: hidden;
+                background: white;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             ">
-                <h3 style="margin: 0; color: white;">{person['이름']}</h3>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-                padding: 40px 20px;
-                text-align: center;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            ">
-                <h1 style="margin: 0; color: white; font-size: 4em; font-weight: bold;">{person['신규']}</h1>
-                <p style="margin: 10px 0 0 0; color: white; font-size: 1.5em; font-weight: 600;">신규/디벨롭</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # 기타 유형들
-            st.markdown(f"""
-            <div style="
-                background: #f8f9fa;
-                padding: 20px;
-                border-left: 5px solid #6c757d;
-            ">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
-                        <div style="font-size: 1.8em; font-weight: bold; color: #17a2b8;">{person['베리']}</div>
-                        <div style="font-size: 0.9em; color: #6c757d;">베리</div>
-                    </div>
-                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
-                        <div style="font-size: 1.8em; font-weight: bold; color: #28a745;">{person['리사이징']}</div>
-                        <div style="font-size: 0.9em; color: #6c757d;">리사이징</div>
-                    </div>
-                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
-                        <div style="font-size: 1.8em; font-weight: bold; color: #ffc107;">{person['지면확장']}</div>
-                        <div style="font-size: 0.9em; color: #6c757d;">지면확장</div>
-                    </div>
-                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
-                        <div style="font-size: 1.8em; font-weight: bold; color: #6f42c1;">{person['AI']}</div>
-                        <div style="font-size: 0.9em; color: #6c757d;">AI</div>
-                    </div>
+                <!-- 이름 -->
+                <div style="
+                    background: #4A90E2;
+                    padding: 15px;
+                    text-align: center;
+                ">
+                    <h3 style="margin: 0; color: white; font-size: 1.3em;">{person['이름']}</h3>
                 </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # 담당 브랜드
-            brands_text = ", ".join(person['브랜드목록'])
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-                padding: 20px;
-                border-radius: 0 0 10px 10px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            ">
-                <div style="text-align: center; margin-bottom: 10px;">
-                    <span style="font-size: 2.5em; font-weight: bold; color: #2c3e50;">{person['브랜드수']}</span>
-                    <span style="font-size: 1.2em; color: #34495e; margin-left: 10px;">담당 브랜드</span>
+                
+                <!-- 신규/디벨롭 -->
+                <div style="
+                    background: #E67E22;
+                    padding: 30px 20px;
+                    text-align: center;
+                ">
+                    <div style="font-size: 3.5em; font-weight: bold; color: white; line-height: 1;">{person['신규']}</div>
+                    <div style="font-size: 1.2em; color: white; margin-top: 8px;">신규/디벨롭</div>
                 </div>
-                <div style="font-size: 0.9em; color: #555; text-align: center; line-height: 1.6;">
-                    {brands_text}
+                
+                <!-- 기타 유형 -->
+                <div style="
+                    padding: 20px;
+                    background: #f8f9fa;
+                ">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span style="color: #666;">베리</span>
+                            </td>
+                            <td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">
+                                <strong style="font-size: 1.3em; color: #333;">{person['베리']}</strong>
+                            </td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">
+                                <span style="color: #666;">리사이징</span>
+                            </td>
+                            <td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">
+                                <strong style="font-size: 1.3em; color: #333;">{person['리사이징']}</strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px;">
+                                <span style="color: #666;">지면확장</span>
+                            </td>
+                            <td style="padding: 8px; text-align: right;">
+                                <strong style="font-size: 1.3em; color: #333;">{person['지면확장']}</strong>
+                            </td>
+                            <td style="padding: 8px;">
+                                <span style="color: #666;">AI</span>
+                            </td>
+                            <td style="padding: 8px; text-align: right;">
+                                <strong style="font-size: 1.3em; color: #333;">{person['AI']}</strong>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <!-- 담당 브랜드 -->
+                <div style="
+                    padding: 20px;
+                    background: white;
+                    border-top: 2px solid #e0e0e0;
+                ">
+                    <div style="text-align: center; margin-bottom: 10px;">
+                        <span style="font-size: 2em; font-weight: bold; color: #4A90E2;">{person['브랜드수']}</span>
+                        <span style="font-size: 1em; color: #666; margin-left: 8px;">담당 브랜드</span>
+                    </div>
+                    <div style="
+                        font-size: 0.85em;
+                        color: #888;
+                        text-align: center;
+                        line-height: 1.6;
+                    ">
+                        {", ".join(person['브랜드목록'])}
+                    </div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
