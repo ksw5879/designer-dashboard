@@ -266,23 +266,23 @@ try:
             """, unsafe_allow_html=True)
             
             
-            # 신규/디벨롭 + 총제작량 (분홍 배경, 나란히)
+            # 신규/디벨롭 + 총제작량 (파스텔 핑크/민트 그라데이션)
             st.markdown(f"""
             <div style="
-                background: #FFD4D4;
-                padding: 25px 15px;
+                background: linear-gradient(135deg, #FFE8F0 0%, #E8F5F5 100%);
+                padding: 30px 15px;
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 20px;
                 text-align: center;
             ">
                 <div>
-                    <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">신규/디벨롭</div>
-                    <div style="font-size: 3.5em; font-weight: bold; color: #000; line-height: 1;">{person['신규']}</div>
+                    <div style="font-size: 0.85em; color: #888; margin-bottom: 8px;">신규/디벨롭</div>
+                    <div style="font-size: 3.5em; font-weight: bold; color: #2C3E50; line-height: 1;">{person['신규']}</div>
                 </div>
                 <div>
-                    <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">총 제작량</div>
-                    <div style="font-size: 3.5em; font-weight: bold; color: #000; line-height: 1;">{person['총제작량']}</div>
+                    <div style="font-size: 0.85em; color: #888; margin-bottom: 8px;">총 제작량</div>
+                    <div style="font-size: 3.5em; font-weight: bold; color: #2C3E50; line-height: 1;">{person['총제작량']}</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -290,44 +290,44 @@ try:
             # 기타 유형들
             st.markdown(f"""
             <div style="
-                background: #f8f9fa;
-                padding: 20px;
+                background: #FAFBFC;
+                padding: 20px 15px;
             ">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
-                        <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['베리']}</div>
-                        <div style="font-size: 0.9em; color: #6c757d;">베리</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
+                        <div style="font-size: 2em; font-weight: bold; color: #5DADE2;">{person['베리']}</div>
+                        <div style="font-size: 0.85em; color: #95A5A6;">베리</div>
                     </div>
-                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
-                        <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['리사이징']}</div>
-                        <div style="font-size: 0.9em; color: #6c757d;">리사이징</div>
+                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
+                        <div style="font-size: 2em; font-weight: bold; color: #5DADE2;">{person['리사이징']}</div>
+                        <div style="font-size: 0.85em; color: #95A5A6;">리사이징</div>
                     </div>
-                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
-                        <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['지면확장']}</div>
-                        <div style="font-size: 0.9em; color: #6c757d;">지면확장</div>
+                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
+                        <div style="font-size: 2em; font-weight: bold; color: #5DADE2;">{person['지면확장']}</div>
+                        <div style="font-size: 0.85em; color: #95A5A6;">지면확장</div>
                     </div>
-                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
-                        <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['AI']}</div>
-                        <div style="font-size: 0.9em; color: #6c757d;">AI</div>
+                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
+                        <div style="font-size: 2em; font-weight: bold; color: #5DADE2;">{person['AI']}</div>
+                        <div style="font-size: 0.85em; color: #95A5A6;">AI</div>
                     </div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
             
-            # 담당 브랜드 (민트/핑크 그라데이션)
+            # 담당 브랜드
             brands_text = ", ".join(person['브랜드목록'])
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, #D4F1F4 0%, #FFE8E8 100%);
+                background: linear-gradient(135deg, #D4F1F4 0%, #FFE8F5 100%);
                 padding: 20px 15px;
                 border-radius: 0 0 10px 10px;
                 text-align: center;
             ">
                 <div style="margin-bottom: 10px;">
-                    <span style="font-size: 2.5em; font-weight: bold; color: #2c3e50;">{person['브랜드수']}</span>
-                    <span style="font-size: 1em; color: #34495e; margin-left: 10px;">담당 브랜드</span>
+                    <span style="font-size: 2.5em; font-weight: bold; color: #2C3E50;">{person['브랜드수']}</span>
+                    <span style="font-size: 1em; color: #5A6C7D; margin-left: 8px;">담당 브랜드</span>
                 </div>
-                <div style="font-size: 0.85em; color: #555; text-align: center; line-height: 1.6;">
+                <div style="font-size: 0.85em; color: #7B8A97; text-align: center; line-height: 1.6;">
                     {brands_text}
                 </div>
             </div>
@@ -351,33 +351,33 @@ try:
             # 헤더
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
-                padding: 15px;
-                border-radius: 10px 10px 0 0;
+                background: linear-gradient(135deg, #5DADE2 0%, #48A0DC 100%);
+                padding: 18px;
+                border-radius: 12px 12px 0 0;
                 color: white;
                 text-align: center;
             ">
-                <h3 style="margin: 0; color: white;">{person['이름']}</h3>
+                <h3 style="margin: 0; color: white; font-size: 1.4em;">{person['이름']}</h3>
             </div>
             """, unsafe_allow_html=True)
             
-            # 신규/디벨롭 + 총제작량 (분홍 배경, 나란히)
+            # 신규/디벨롭 + 총제작량
             st.markdown(f"""
             <div style="
-                background: #FFD4D4;
-                padding: 25px 15px;
+                background: linear-gradient(135deg, #FFE8F0 0%, #E8F5F5 100%);
+                padding: 30px 15px;
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 20px;
                 text-align: center;
             ">
                 <div>
-                    <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">신규/디벨롭</div>
-                    <div style="font-size: 3.5em; font-weight: bold; color: #000; line-height: 1;">{person['신규']}</div>
+                    <div style="font-size: 0.85em; color: #888; margin-bottom: 8px;">신규/디벨롭</div>
+                    <div style="font-size: 3.5em; font-weight: bold; color: #2C3E50; line-height: 1;">{person['신규']}</div>
                 </div>
                 <div>
-                    <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">총 제작량</div>
-                    <div style="font-size: 3.5em; font-weight: bold; color: #000; line-height: 1;">{person['총제작량']}</div>
+                    <div style="font-size: 0.85em; color: #888; margin-bottom: 8px;">총 제작량</div>
+                    <div style="font-size: 3.5em; font-weight: bold; color: #2C3E50; line-height: 1;">{person['총제작량']}</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -385,44 +385,44 @@ try:
             # 기타 유형들
             st.markdown(f"""
             <div style="
-                background: #f8f9fa;
-                padding: 20px;
+                background: #FAFBFC;
+                padding: 20px 15px;
             ">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
-                        <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['베리']}</div>
-                        <div style="font-size: 0.9em; color: #6c757d;">베리</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
+                        <div style="font-size: 2em; font-weight: bold; color: #5DADE2;">{person['베리']}</div>
+                        <div style="font-size: 0.85em; color: #95A5A6;">베리</div>
                     </div>
-                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
-                        <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['리사이징']}</div>
-                        <div style="font-size: 0.9em; color: #6c757d;">리사이징</div>
+                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
+                        <div style="font-size: 2em; font-weight: bold; color: #5DADE2;">{person['리사이징']}</div>
+                        <div style="font-size: 0.85em; color: #95A5A6;">리사이징</div>
                     </div>
-                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
-                        <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['지면확장']}</div>
-                        <div style="font-size: 0.9em; color: #6c757d;">지면확장</div>
+                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
+                        <div style="font-size: 2em; font-weight: bold; color: #5DADE2;">{person['지면확장']}</div>
+                        <div style="font-size: 0.85em; color: #95A5A6;">지면확장</div>
                     </div>
-                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
-                        <div style="font-size: 1.8em; font-weight: bold; color: #4A90E2;">{person['AI']}</div>
-                        <div style="font-size: 0.9em; color: #6c757d;">AI</div>
+                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
+                        <div style="font-size: 2em; font-weight: bold; color: #5DADE2;">{person['AI']}</div>
+                        <div style="font-size: 0.85em; color: #95A5A6;">AI</div>
                     </div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
             
-            # 담당 브랜드 (민트/핑크 그라데이션)
+            # 담당 브랜드
             brands_text = ", ".join(person['브랜드목록'])
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, #D4F1F4 0%, #FFE8E8 100%);
+                background: linear-gradient(135deg, #D4F1F4 0%, #FFE8F5 100%);
                 padding: 20px 15px;
                 border-radius: 0 0 10px 10px;
                 text-align: center;
             ">
                 <div style="margin-bottom: 10px;">
-                    <span style="font-size: 2.5em; font-weight: bold; color: #2c3e50;">{person['브랜드수']}</span>
-                    <span style="font-size: 1em; color: #34495e; margin-left: 10px;">담당 브랜드</span>
+                    <span style="font-size: 2.5em; font-weight: bold; color: #2C3E50;">{person['브랜드수']}</span>
+                    <span style="font-size: 1em; color: #5A6C7D; margin-left: 8px;">담당 브랜드</span>
                 </div>
-                <div style="font-size: 0.85em; color: #555; text-align: center; line-height: 1.6;">
+                <div style="font-size: 0.85em; color: #7B8A97; text-align: center; line-height: 1.6;">
                     {brands_text}
                 </div>
             </div>
