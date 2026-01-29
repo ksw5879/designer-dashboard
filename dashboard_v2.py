@@ -269,7 +269,7 @@ try:
             # 신규/디벨롭 + 총제작량 (파스텔 핑크/민트 그라데이션)
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, #FFE8F0 0%, #E8F5F5 100%);
+                background: #E1E8ED;
                 padding: 30px 15px;
                 display: grid;
                 grid-template-columns: 1fr 1fr;
@@ -364,7 +364,7 @@ try:
             # 신규/디벨롭 + 총제작량
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, #FFE8F0 0%, #E8F5F5 100%);
+                background: #E1E8ED;
                 padding: 30px 15px;
                 display: grid;
                 grid-template-columns: 1fr 1fr;
