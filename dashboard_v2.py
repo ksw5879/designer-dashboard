@@ -103,13 +103,14 @@ try:
     week_options = ['전체'] + [str(w) for w in available_weeks]
     selected_week = st.selectbox("📅 주차 선택", options=week_options, index=0)
     
-    # 그래프 1: 주차별 그래프 (월단위) - 위
-    st.markdown("### 📊 주차별 제작량 (월단위)")
+    # 그래프 1: 주차별 그래프 (최근 5주) - 위
+    st.markdown("### 📊 주차별 제작량 (최근 5주)")
     
-    available_months = sorted(df['월'].unique(), reverse=True)
-    if len(available_months) > 0:
-        recent_month = available_months[0]
-        month_df = df[df['월'] == recent_month]
+    # 최근 5주 데이터 (주차 선택과 무관)
+    available_weeks_all = sorted(df['주차_정렬용'].unique(), reverse=True)
+    if len(available_weeks_all) > 0:
+        recent_5_weeks = available_weeks_all[:min(5, len(available_weeks_all))]  # 최근 5주 (또는 가능한 만큼)
+        month_df = df[df['주차_정렬용'].isin(recent_5_weeks)]
         
         weekly_total = month_df.groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
         weekly_total.columns = ['주차', '총제작량']
