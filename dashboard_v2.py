@@ -208,28 +208,9 @@ try:
             name='총 제작량',
             line=dict(color='#4A90E2', width=3),
             marker=dict(size=10)
-        ))
-        
-        fig_daily.add_trace(go.Scatter(
-            x=daily_stats['날짜_표시'],
-            y=daily_stats['신규제작량'],
-            mode='lines+markers',
-            name='신규 제작량',
-            line=dict(color='#E67E22', width=3),
-            marker=dict(size=10)
-        ))
-        
-        fig_daily.update_layout(
-            height=400,
-            xaxis_title="날짜",
-            yaxis_title="제작량 (개)",
-            hovermode='x unified'
-        )
-        
-        st.plotly_chart(fig_daily, use_container_width=True)
     
     # ============================================
-    # 사람별 카드
+    # 사람별 카드 + 개인 그래프
     # ============================================
     st.markdown("---")
     st.markdown("## 👥 사람별 제작 현황")
@@ -238,8 +219,19 @@ try:
     if selected_week != '전체':
         selected_week_period = pd.Period(selected_week, freq='W')
         df_filtered = df[df['주차_정렬용'] == selected_week_period]
+        
+        # 전주 데이터도 가져오기
+        all_weeks = sorted(df['주차_정렬용'].unique(), reverse=True)
+        current_week_idx = all_weeks.index(selected_week_period) if selected_week_period in all_weeks else -1
+        
+        if current_week_idx >= 0 and current_week_idx < len(all_weeks) - 1:
+            prev_week_period = all_weeks[current_week_idx + 1]
+            df_prev_week = df[df['주차_정렬용'] == prev_week_period]
+        else:
+            df_prev_week = pd.DataFrame()  # 전주 데이터 없음
     else:
         df_filtered = df
+        df_prev_week = pd.DataFrame()
     
     # 사람별 통계 계산
     def calculate_person_stats(person_name):
@@ -263,198 +255,209 @@ try:
             '지면확장': int(type_counts.get('지면확장', 0)),
             'AI': int(type_counts.get('AI', 0)),
             '브랜드수': len(brands),
-            '브랜드목록': brands
+            '브랜드목록': ", ".join(brands) if brands else "-"
         }
+    
+    # 개인 그래프 생성 함수
+    def create_person_graph(person_name, current_week_data, prev_week_data):
+        # 이번주 일별 데이터
+        current_daily = current_week_data.groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
+        current_daily.columns = ['날짜', '총제작량']
+        current_daily['날짜_표시'] = current_daily['날짜'].dt.strftime('%m/%d')
+        
+        current_new = current_week_data[current_week_data['신규여부'] == True].groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
+        current_new.columns = ['날짜', '신규제작량']
+        
+        current_stats = pd.merge(current_daily, current_new, on='날짜', how='left').fillna(0)
+        current_stats = current_stats.sort_values('날짜')
+        
+        # 전주 일별 데이터
+        if len(prev_week_data) > 0:
+            prev_daily = prev_week_data.groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
+            prev_daily.columns = ['날짜', '총제작량']
+            prev_daily['날짜_표시'] = prev_daily['날짜'].dt.strftime('%m/%d')
+            
+            prev_new = prev_week_data[prev_week_data['신규여부'] == True].groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
+            prev_new.columns = ['날짜', '신규제작량']
+            
+            prev_stats = pd.merge(prev_daily, prev_new, on='날짜', how='left').fillna(0)
+            prev_stats = prev_stats.sort_values('날짜')
+        else:
+            prev_stats = pd.DataFrame()
+        
+        # 그래프 생성
+        fig = go.Figure()
+        
+        # 전주 데이터 (50% 투명)
+        if len(prev_stats) > 0:
+            fig.add_trace(go.Scatter(
+                x=prev_stats['날짜_표시'],
+                y=prev_stats['총제작량'],
+                mode='lines+markers',
+                name='전주 총제작량',
+                line=dict(color='#4A90E2', width=2, dash='dash'),
+                marker=dict(size=6),
+                opacity=0.5
+            ))
+            
+            fig.add_trace(go.Scatter(
+                x=prev_stats['날짜_표시'],
+                y=prev_stats['신규제작량'],
+                mode='lines+markers',
+                name='전주 신규',
+                line=dict(color='#E67E22', width=2, dash='dash'),
+                marker=dict(size=6),
+                opacity=0.5
+            ))
+        
+        # 이번주 데이터 (진하게)
+        fig.add_trace(go.Scatter(
+            x=current_stats['날짜_표시'],
+            y=current_stats['총제작량'],
+            mode='lines+markers',
+            name='이번주 총제작량',
+            line=dict(color='#4A90E2', width=3),
+            marker=dict(size=8)
+        ))
+        
+        fig.add_trace(go.Scatter(
+            x=current_stats['날짜_표시'],
+            y=current_stats['신규제작량'],
+            mode='lines+markers',
+            name='이번주 신규',
+            line=dict(color='#E67E22', width=3),
+            marker=dict(size=8)
+        ))
+        
+        fig.update_layout(
+            height=300,
+            margin=dict(l=20, r=20, t=30, b=20),
+            xaxis_title="날짜",
+            yaxis_title="제작량",
+            hovermode='x unified',
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1,
+                font=dict(size=10)
+            )
+        )
+        
+        return fig
+    
+    # 카드 렌더링 함수
+    def render_person_card(person):
+        st.markdown(f"""
+        <div style="
+            border: 3px solid #FFE8F0;
+            border-radius: 15px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        ">
+            <div style="background: #FFE8F0; padding: 15px; text-align: center;">
+                <h3 style="margin: 0; color: #2C3E50; font-weight: 600;">{person['이름']}</h3>
+            </div>
+            <div style="background: #F5F7F9; padding: 20px 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: center;">
+                <div>
+                    <div style="font-size: 0.85em; color: #888; margin-bottom: 5px;">신규/디벨롭</div>
+                    <div style="font-size: 2.5em; font-weight: bold; color: #2C3E50; line-height: 1;">{person['신규']}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.85em; color: #888; margin-bottom: 5px;">총 제작량</div>
+                    <div style="font-size: 2.5em; font-weight: bold; color: #2C3E50; line-height: 1;">{person['총제작량']}</div>
+                </div>
+            </div>
+            <div style="padding: 15px; background: #FAFBFC; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div style="background: white; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
+                    <div style="font-size: 1.5em; font-weight: bold; color: #5DADE2;">{person['베리']}</div>
+                    <div style="font-size: 0.8em; color: #95A5A6;">베리</div>
+                </div>
+                <div style="background: white; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
+                    <div style="font-size: 1.5em; font-weight: bold; color: #5DADE2;">{person['리사이징']}</div>
+                    <div style="font-size: 0.8em; color: #95A5A6;">리사이징</div>
+                </div>
+                <div style="background: white; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
+                    <div style="font-size: 1.5em; font-weight: bold; color: #5DADE2;">{person['지면확장']}</div>
+                    <div style="font-size: 0.8em; color: #95A5A6;">지면확장</div>
+                </div>
+                <div style="background: white; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
+                    <div style="font-size: 1.5em; font-weight: bold; color: #5DADE2;">{person['AI']}</div>
+                    <div style="font-size: 0.8em; color: #95A5A6;">AI</div>
+                </div>
+            </div>
+            <div style="background: linear-gradient(135deg, #D4F1F4 0%, #FFE8F5 100%); padding: 15px; text-align: center;">
+                <div style="margin-bottom: 8px;">
+                    <span style="font-size: 2em; font-weight: bold; color: #2C3E50;">{person['브랜드수']}</span>
+                    <span style="font-size: 0.9em; color: #5A6C7D; margin-left: 8px;">담당 브랜드</span>
+                </div>
+                <div style="font-size: 0.8em; color: #7B8A97; line-height: 1.4;">{person['브랜드목록']}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     
     # 이미지 디자이너
     st.markdown("### 🎨 이미지 디자이너")
-    image_stats = []
-    for designer in IMAGE_DESIGNERS:
-        if designer in df_filtered['제작자_채움'].values:
-            image_stats.append(calculate_person_stats(designer))
     
-    image_stats = sorted(image_stats, key=lambda x: x['신규'], reverse=True)
-    
-    cols = st.columns(5)
-    for i, person in enumerate(image_stats):
-        with cols[i]:
-            # 헤더
-            st.markdown(f"""
-            <div style="
-                background: #FFE8F0;
-                padding: 15px;
-                border-radius: 10px 10px 0 0;
-                color: white;
-                text-align: center;
-            ">
-                <h3 style="margin: 0; color: #2C3E50; font-weight: 600;">{person['이름']}</h3>
-            </div>
-            """, unsafe_allow_html=True)
+    if selected_week == '전체':
+        st.info("특정 주차를 선택하면 개인별 상세 데이터가 표시됩니다.")
+    else:
+        image_stats = []
+        for designer in IMAGE_DESIGNERS:
+            if designer in df_filtered['제작자_채움'].values:
+                image_stats.append(calculate_person_stats(designer))
+        
+        image_stats = sorted(image_stats, key=lambda x: x['신규'], reverse=True)
+        
+        for person in image_stats:
+            col1, col2 = st.columns([1, 2])
             
+            with col1:
+                render_person_card(person)
             
-            # 신규/디벨롭 + 총제작량 (파스텔 핑크/민트 그라데이션)
-            st.markdown(f"""
-            <div style="
-                background: #F5F7F9;
-                padding: 30px 15px;
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 20px;
-                text-align: center;
-            ">
-                <div>
-                    <div style="font-size: 0.85em; color: #888; margin-bottom: 8px;">신규/디벨롭</div>
-                    <div style="font-size: 3.5em; font-weight: bold; color: #2C3E50; line-height: 1;">{person['신규']}</div>
-                </div>
-                <div>
-                    <div style="font-size: 0.85em; color: #888; margin-bottom: 8px;">총 제작량</div>
-                    <div style="font-size: 3.5em; font-weight: bold; color: #2C3E50; line-height: 1;">{person['총제작량']}</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            with col2:
+                # 개인 데이터 필터링
+                person_current = df_filtered[df_filtered['제작자_채움'] == person['이름']]
+                person_prev = df_prev_week[df_prev_week['제작자_채움'] == person['이름']] if len(df_prev_week) > 0 else pd.DataFrame()
+                
+                # 그래프 생성
+                fig = create_person_graph(person['이름'], person_current, person_prev)
+                st.plotly_chart(fig, use_container_width=True)
             
-            # 기타 유형들
-            st.markdown(f"""
-            <div style="
-                background: #FAFBFC;
-                padding: 20px 15px;
-            ">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
-                        <div style="font-size: 2em; font-weight: bold; color: #5DADE2;">{person['베리']}</div>
-                        <div style="font-size: 0.85em; color: #95A5A6;">베리</div>
-                    </div>
-                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
-                        <div style="font-size: 2em; font-weight: bold; color: #5DADE2;">{person['리사이징']}</div>
-                        <div style="font-size: 0.85em; color: #95A5A6;">리사이징</div>
-                    </div>
-                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
-                        <div style="font-size: 2em; font-weight: bold; color: #5DADE2;">{person['지면확장']}</div>
-                        <div style="font-size: 0.85em; color: #95A5A6;">지면확장</div>
-                    </div>
-                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
-                        <div style="font-size: 2em; font-weight: bold; color: #5DADE2;">{person['AI']}</div>
-                        <div style="font-size: 0.85em; color: #95A5A6;">AI</div>
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # 담당 브랜드
-            brands_text = ", ".join(person['브랜드목록'])
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #D4F1F4 0%, #FFE8F5 100%);
-                padding: 20px 15px;
-                border-radius: 0 0 10px 10px;
-                text-align: center;
-            ">
-                <div style="margin-bottom: 10px;">
-                    <span style="font-size: 2.5em; font-weight: bold; color: #2C3E50;">{person['브랜드수']}</span>
-                    <span style="font-size: 1em; color: #5A6C7D; margin-left: 8px;">담당 브랜드</span>
-                </div>
-                <div style="font-size: 0.85em; color: #7B8A97; text-align: center; line-height: 1.6;">
-                    {brands_text}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("---")
     
     # 영상 디자이너
-    st.markdown("---")
     st.markdown("### 🎬 영상 디자이너")
-    video_stats = []
-    for designer in VIDEO_DESIGNERS:
-        if designer in df_filtered['제작자_채움'].values:
-            video_stats.append(calculate_person_stats(designer))
     
-    video_stats = sorted(video_stats, key=lambda x: x['신규'], reverse=True)
-    
-    cols = st.columns(5)
-    for i, person in enumerate(video_stats):
-        with cols[i]:
-            # 헤더
-            st.markdown(f"""
-            <div style="
-                background: #FFE8F0;
-                padding: 18px;
-                border-radius: 12px 12px 0 0;
-                color: white;
-                text-align: center;
-            ">
-                <h3 style="margin: 0; color: #2C3E50; font-size: 1.4em; font-weight: 600;">{person['이름']}</h3>
-            </div>
-            """, unsafe_allow_html=True)
+    if selected_week == '전체':
+        st.info("특정 주차를 선택하면 개인별 상세 데이터가 표시됩니다.")
+    else:
+        video_stats = []
+        for designer in VIDEO_DESIGNERS:
+            if designer in df_filtered['제작자_채움'].values:
+                video_stats.append(calculate_person_stats(designer))
+        
+        video_stats = sorted(video_stats, key=lambda x: x['신규'], reverse=True)
+        
+        for person in video_stats:
+            col1, col2 = st.columns([1, 2])
             
-            # 신규/디벨롭 + 총제작량
-            st.markdown(f"""
-            <div style="
-                background: #F5F7F9;
-                padding: 30px 15px;
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 20px;
-                text-align: center;
-            ">
-                <div>
-                    <div style="font-size: 0.85em; color: #888; margin-bottom: 8px;">신규/디벨롭</div>
-                    <div style="font-size: 3.5em; font-weight: bold; color: #2C3E50; line-height: 1;">{person['신규']}</div>
-                </div>
-                <div>
-                    <div style="font-size: 0.85em; color: #888; margin-bottom: 8px;">총 제작량</div>
-                    <div style="font-size: 3.5em; font-weight: bold; color: #2C3E50; line-height: 1;">{person['총제작량']}</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            with col1:
+                render_person_card(person)
             
-            # 기타 유형들
-            st.markdown(f"""
-            <div style="
-                background: #FAFBFC;
-                padding: 20px 15px;
-            ">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
-                        <div style="font-size: 2em; font-weight: bold; color: #5DADE2;">{person['베리']}</div>
-                        <div style="font-size: 0.85em; color: #95A5A6;">베리</div>
-                    </div>
-                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
-                        <div style="font-size: 2em; font-weight: bold; color: #5DADE2;">{person['리사이징']}</div>
-                        <div style="font-size: 0.85em; color: #95A5A6;">리사이징</div>
-                    </div>
-                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
-                        <div style="font-size: 2em; font-weight: bold; color: #5DADE2;">{person['지면확장']}</div>
-                        <div style="font-size: 0.85em; color: #95A5A6;">지면확장</div>
-                    </div>
-                    <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
-                        <div style="font-size: 2em; font-weight: bold; color: #5DADE2;">{person['AI']}</div>
-                        <div style="font-size: 0.85em; color: #95A5A6;">AI</div>
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            with col2:
+                # 개인 데이터 필터링
+                person_current = df_filtered[df_filtered['제작자_채움'] == person['이름']]
+                person_prev = df_prev_week[df_prev_week['제작자_채움'] == person['이름']] if len(df_prev_week) > 0 else pd.DataFrame()
+                
+                # 그래프 생성
+                fig = create_person_graph(person['이름'], person_current, person_prev)
+                st.plotly_chart(fig, use_container_width=True)
             
-            # 담당 브랜드
-            brands_text = ", ".join(person['브랜드목록'])
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #D4F1F4 0%, #FFE8F5 100%);
-                padding: 20px 15px;
-                border-radius: 0 0 10px 10px;
-                text-align: center;
-            ">
-                <div style="margin-bottom: 10px;">
-                    <span style="font-size: 2.5em; font-weight: bold; color: #2C3E50;">{person['브랜드수']}</span>
-                    <span style="font-size: 1em; color: #5A6C7D; margin-left: 8px;">담당 브랜드</span>
-                </div>
-                <div style="font-size: 0.85em; color: #7B8A97; text-align: center; line-height: 1.6;">
-                    {brands_text}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("---")
 
 except Exception as e:
     st.error("❌ 데이터를 불러올 수 없습니다.")
