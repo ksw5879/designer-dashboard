@@ -420,6 +420,7 @@ try:
             margin=dict(l=20, r=20, t=30, b=20),
             xaxis_title="요일",
             yaxis_title="제작량",
+            yaxis=dict(rangemode='tozero'),  # y축 0부터 시작
             hovermode='x unified',
             showlegend=True,
             legend=dict(
