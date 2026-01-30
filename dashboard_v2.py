@@ -188,6 +188,9 @@ try:
         selected_week_period = pd.Period(selected_week, freq='W')
         week_df = df[df['주차_정렬용'] == selected_week_period]
         
+        # 평일만 필터링 (월~금)
+        week_df = week_df[week_df['날짜_변환'].dt.dayofweek < 5]
+        
         daily_total = week_df.groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
         daily_total.columns = ['날짜', '총제작량']
         daily_total['날짜_표시'] = daily_total['날짜'].dt.strftime('%m/%d')
@@ -260,7 +263,9 @@ try:
     
     # 개인 그래프 생성 함수
     def create_person_graph(person_name, current_week_data, prev_week_data):
-        # 이번주 일별 데이터
+        # 이번주 일별 데이터 (평일만)
+        current_week_data = current_week_data[current_week_data['날짜_변환'].dt.dayofweek < 5]  # 0=월, 4=금
+        
         current_daily = current_week_data.groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
         current_daily.columns = ['날짜', '총제작량']
         current_daily['날짜_표시'] = current_daily['날짜'].dt.strftime('%m/%d')
@@ -271,8 +276,10 @@ try:
         current_stats = pd.merge(current_daily, current_new, on='날짜', how='left').fillna(0)
         current_stats = current_stats.sort_values('날짜')
         
-        # 전주 일별 데이터
+        # 전주 일별 데이터 (평일만)
         if len(prev_week_data) > 0:
+            prev_week_data = prev_week_data[prev_week_data['날짜_변환'].dt.dayofweek < 5]  # 0=월, 4=금
+            
             prev_daily = prev_week_data.groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
             prev_daily.columns = ['날짜', '총제작량']
             prev_daily['날짜_표시'] = prev_daily['날짜'].dt.strftime('%m/%d')
