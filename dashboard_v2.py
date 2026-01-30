@@ -71,17 +71,15 @@ try:
     df['주차_정렬용'] = df['날짜_변환'].dt.to_period('W')
     df['월'] = df['날짜_변환'].dt.to_period('M')
     
-    df['신규여부'] = df['콘텐츠 유형'].str.contains('신규', case=False, na=False)
+    df['신규여부'] = df['콘텐츠 유형'].str.contains('신규', case=False, na=False) | df['콘텐츠 유형'].str.contains('ai', case=False, na=False)
     
     # 콘텐츠 유형 간소화
     def simplify_content_type(content_type):
         if pd.isna(content_type) or content_type == '':
             return '기타'
         content_type = str(content_type).lower()
-        if '신규' in content_type or '디벨롭' in content_type:
+        if '신규' in content_type or '디벨롭' in content_type or 'ai' in content_type:
             return '신규/디벨롭'
-        elif 'ai' in content_type:
-            return 'AI'
         elif '리사이징' in content_type:
             return '리사이징'
         elif '베리' in content_type:
@@ -262,6 +260,9 @@ try:
         # 유형별 집계
         type_counts = person_df.groupby('콘텐츠유형_간소화')['콘텐츠 수'].sum().to_dict()
         
+        # AI 개수 별도 계산 (원본 데이터에서)
+        ai_count = person_df[person_df['콘텐츠 유형'].str.contains('ai', case=False, na=False)]['콘텐츠 수'].sum()
+        
         # 브랜드 목록
         brands = person_df['브랜드명'].unique().tolist()
         
@@ -271,11 +272,11 @@ try:
         return {
             '이름': person_name,
             '총제작량': int(total),
-            '신규': int(type_counts.get('신규/디벨롭', 0)),
+            '신규': int(type_counts.get('신규/디벨롭', 0)),  # AI 포함됨
             '베리': int(type_counts.get('베리', 0)),
             '리사이징': int(type_counts.get('리사이징', 0)),
             '지면확장': int(type_counts.get('지면확장', 0)),
-            'AI': int(type_counts.get('AI', 0)),
+            'AI': int(ai_count),  # 별도 표시
             '브랜드수': len(brands),
             '브랜드목록': ", ".join(brands) if brands else "-"
         }
