@@ -287,13 +287,17 @@ try:
         
         current_daily = current_week_data.groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
         current_daily.columns = ['날짜', '총제작량']
+        current_daily['요일'] = current_daily['날짜'].dt.dayofweek  # 0=월, 4=금
+        current_daily['요일_표시'] = current_daily['날짜'].dt.strftime('%A').map({
+            'Monday': '월', 'Tuesday': '화', 'Wednesday': '수', 'Thursday': '목', 'Friday': '금'
+        })
         current_daily['날짜_표시'] = current_daily['날짜'].dt.strftime('%m/%d')
         
         current_new = current_week_data[current_week_data['신규여부'] == True].groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
         current_new.columns = ['날짜', '신규제작량']
         
         current_stats = pd.merge(current_daily, current_new, on='날짜', how='left').fillna(0)
-        current_stats = current_stats.sort_values('날짜')
+        current_stats = current_stats.sort_values('요일')  # 요일 순서로 정렬
         
         # 전주 일별 데이터 (평일만)
         if len(prev_week_data) > 0:
@@ -301,64 +305,76 @@ try:
             
             prev_daily = prev_week_data.groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
             prev_daily.columns = ['날짜', '총제작량']
+            prev_daily['요일'] = prev_daily['날짜'].dt.dayofweek
+            prev_daily['요일_표시'] = prev_daily['날짜'].dt.strftime('%A').map({
+                'Monday': '월', 'Tuesday': '화', 'Wednesday': '수', 'Thursday': '목', 'Friday': '금'
+            })
             prev_daily['날짜_표시'] = prev_daily['날짜'].dt.strftime('%m/%d')
             
             prev_new = prev_week_data[prev_week_data['신규여부'] == True].groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
             prev_new.columns = ['날짜', '신규제작량']
             
             prev_stats = pd.merge(prev_daily, prev_new, on='날짜', how='left').fillna(0)
-            prev_stats = prev_stats.sort_values('날짜')
+            prev_stats = prev_stats.sort_values('요일')  # 요일 순서로 정렬
         else:
             prev_stats = pd.DataFrame()
         
         # 그래프 생성
         fig = go.Figure()
         
-        # 전주 데이터 (50% 투명)
+        # 전주 데이터 (40% 투명, 점선)
         if len(prev_stats) > 0:
             fig.add_trace(go.Scatter(
-                x=prev_stats['날짜_표시'],
+                x=prev_stats['요일_표시'],
                 y=prev_stats['총제작량'],
                 mode='lines+markers',
                 name='전주 총제작량',
-                line=dict(color='#4A90E2', width=2, dash='dash'),
+                line=dict(color='#4A90E2', width=2, dash='dot'),
                 marker=dict(size=6),
-                opacity=0.5
+                opacity=0.4,
+                text=prev_stats['날짜_표시'],
+                hovertemplate='<b>전주 총제작량</b><br>%{x}<br>%{text}<br>%{y}개<extra></extra>'
             ))
             
             fig.add_trace(go.Scatter(
-                x=prev_stats['날짜_표시'],
+                x=prev_stats['요일_표시'],
                 y=prev_stats['신규제작량'],
                 mode='lines+markers',
                 name='전주 신규',
-                line=dict(color='#E67E22', width=2, dash='dash'),
+                line=dict(color='#E67E22', width=2, dash='dot'),
                 marker=dict(size=6),
-                opacity=0.5
+                opacity=0.4,
+                text=prev_stats['날짜_표시'],
+                hovertemplate='<b>전주 신규</b><br>%{x}<br>%{text}<br>%{y}개<extra></extra>'
             ))
         
-        # 이번주 데이터 (진하게)
+        # 이번주 데이터 (진하게, 실선)
         fig.add_trace(go.Scatter(
-            x=current_stats['날짜_표시'],
+            x=current_stats['요일_표시'],
             y=current_stats['총제작량'],
             mode='lines+markers',
             name='이번주 총제작량',
             line=dict(color='#4A90E2', width=3),
-            marker=dict(size=8)
+            marker=dict(size=8),
+            text=current_stats['날짜_표시'],
+            hovertemplate='<b>이번주 총제작량</b><br>%{x}<br>%{text}<br>%{y}개<extra></extra>'
         ))
         
         fig.add_trace(go.Scatter(
-            x=current_stats['날짜_표시'],
+            x=current_stats['요일_표시'],
             y=current_stats['신규제작량'],
             mode='lines+markers',
             name='이번주 신규',
             line=dict(color='#E67E22', width=3),
-            marker=dict(size=8)
+            marker=dict(size=8),
+            text=current_stats['날짜_표시'],
+            hovertemplate='<b>이번주 신규</b><br>%{x}<br>%{text}<br>%{y}개<extra></extra>'
         ))
         
         fig.update_layout(
             height=300,
             margin=dict(l=20, r=20, t=30, b=20),
-            xaxis_title="날짜",
+            xaxis_title="요일",
             yaxis_title="제작량",
             hovermode='x unified',
             showlegend=True,
