@@ -211,6 +211,25 @@ try:
             name='총 제작량',
             line=dict(color='#4A90E2', width=3),
             marker=dict(size=10)
+        ))
+        
+        fig_daily.add_trace(go.Scatter(
+            x=daily_stats['날짜_표시'],
+            y=daily_stats['신규제작량'],
+            mode='lines+markers',
+            name='신규 제작량',
+            line=dict(color='#E67E22', width=3),
+            marker=dict(size=10)
+        ))
+        
+        fig_daily.update_layout(
+            height=400,
+            xaxis_title="날짜",
+            yaxis_title="제작량 (개)",
+            hovermode='x unified'
+        )
+        
+        st.plotly_chart(fig_daily, use_container_width=True)
     
     # ============================================
     # 사람별 카드 + 개인 그래프
