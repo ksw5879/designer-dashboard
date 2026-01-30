@@ -280,42 +280,86 @@ try:
             '브랜드목록': ", ".join(brands) if brands else "-"
         }
     
+    # 날짜 정보 표시 함수
+    def render_date_info(person_current, person_prev):
+        if len(person_current) > 0:
+            current_dates = sorted(person_current[person_current['날짜_변환'].dt.dayofweek < 5]['날짜_변환'].unique())
+            current_dates_str = " / ".join([d.strftime('%m/%d') for d in current_dates])
+        else:
+            current_dates_str = "-"
+        
+        if len(person_prev) > 0:
+            prev_dates = sorted(person_prev[person_prev['날짜_변환'].dt.dayofweek < 5]['날짜_변환'].unique())
+            prev_dates_str = " / ".join([d.strftime('%m/%d') for d in prev_dates])
+        else:
+            prev_dates_str = "-"
+        
+        st.markdown(f"""
+        <div style="
+            background: #F8F9FA;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            color: #555;
+            margin-top: -10px;
+        ">
+            <div style="margin-bottom: 5px;">
+                <strong style="color: #E67E22;">📅 전주:</strong> {prev_dates_str}
+            </div>
+            <div>
+                <strong style="color: #4A90E2;">📅 금주:</strong> {current_dates_str}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
     # 개인 그래프 생성 함수
     def create_person_graph(person_name, current_week_data, prev_week_data):
-        # 이번주 일별 데이터 (평일만)
-        current_week_data = current_week_data[current_week_data['날짜_변환'].dt.dayofweek < 5]  # 0=월, 4=금
-        
-        current_daily = current_week_data.groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
-        current_daily.columns = ['날짜', '총제작량']
-        current_daily['요일'] = current_daily['날짜'].dt.dayofweek  # 0=월, 4=금
-        current_daily['요일_표시'] = current_daily['날짜'].dt.strftime('%A').map({
-            'Monday': '월', 'Tuesday': '화', 'Wednesday': '수', 'Thursday': '목', 'Friday': '금'
+        # 기본 요일 템플릿 생성 (월~금)
+        weekdays_template = pd.DataFrame({
+            '요일': [0, 1, 2, 3, 4],
+            '요일_표시': ['월', '화', '수', '목', '금']
         })
-        current_daily['날짜_표시'] = current_daily['날짜'].dt.strftime('%m/%d')
         
-        current_new = current_week_data[current_week_data['신규여부'] == True].groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
-        current_new.columns = ['날짜', '신규제작량']
+        # 이번주 일별 데이터 (평일만)
+        current_week_data = current_week_data[current_week_data['날짜_변환'].dt.dayofweek < 5]
         
-        current_stats = pd.merge(current_daily, current_new, on='날짜', how='left').fillna(0)
-        current_stats = current_stats.sort_values('요일')  # 요일 순서로 정렬
+        if len(current_week_data) > 0:
+            current_daily = current_week_data.groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
+            current_daily.columns = ['날짜', '총제작량']
+            current_daily['요일'] = current_daily['날짜'].dt.dayofweek
+            current_daily['날짜_표시'] = current_daily['날짜'].dt.strftime('%m/%d')
+            
+            current_new = current_week_data[current_week_data['신규여부'] == True].groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
+            current_new.columns = ['날짜', '신규제작량']
+            current_new['요일'] = pd.to_datetime(current_new['날짜']).dt.dayofweek
+            
+            current_stats = pd.merge(current_daily, current_new[['요일', '신규제작량']], on='요일', how='left').fillna(0)
+            
+            # 템플릿과 병합하여 빈 요일 채우기
+            current_stats = pd.merge(weekdays_template, current_stats[['요일', '총제작량', '신규제작량', '날짜_표시']], on='요일', how='left').fillna(0)
+        else:
+            current_stats = weekdays_template.copy()
+            current_stats['총제작량'] = 0
+            current_stats['신규제작량'] = 0
+            current_stats['날짜_표시'] = '-'
         
         # 전주 일별 데이터 (평일만)
         if len(prev_week_data) > 0:
-            prev_week_data = prev_week_data[prev_week_data['날짜_변환'].dt.dayofweek < 5]  # 0=월, 4=금
+            prev_week_data = prev_week_data[prev_week_data['날짜_변환'].dt.dayofweek < 5]
             
             prev_daily = prev_week_data.groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
             prev_daily.columns = ['날짜', '총제작량']
             prev_daily['요일'] = prev_daily['날짜'].dt.dayofweek
-            prev_daily['요일_표시'] = prev_daily['날짜'].dt.strftime('%A').map({
-                'Monday': '월', 'Tuesday': '화', 'Wednesday': '수', 'Thursday': '목', 'Friday': '금'
-            })
             prev_daily['날짜_표시'] = prev_daily['날짜'].dt.strftime('%m/%d')
             
             prev_new = prev_week_data[prev_week_data['신규여부'] == True].groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
             prev_new.columns = ['날짜', '신규제작량']
+            prev_new['요일'] = pd.to_datetime(prev_new['날짜']).dt.dayofweek
             
-            prev_stats = pd.merge(prev_daily, prev_new, on='날짜', how='left').fillna(0)
-            prev_stats = prev_stats.sort_values('요일')  # 요일 순서로 정렬
+            prev_stats = pd.merge(prev_daily, prev_new[['요일', '신규제작량']], on='요일', how='left').fillna(0)
+            
+            # 템플릿과 병합하여 빈 요일 채우기
+            prev_stats = pd.merge(weekdays_template, prev_stats[['요일', '총제작량', '신규제작량', '날짜_표시']], on='요일', how='left').fillna(0)
         else:
             prev_stats = pd.DataFrame()
         
@@ -468,6 +512,9 @@ try:
                 # 그래프 생성
                 fig = create_person_graph(person['이름'], person_current, person_prev)
                 st.plotly_chart(fig, use_container_width=True)
+                
+                # 날짜 정보 표시
+                render_date_info(person_current, person_prev)
             
             st.markdown("---")
     
@@ -498,6 +545,9 @@ try:
                 # 그래프 생성
                 fig = create_person_graph(person['이름'], person_current, person_prev)
                 st.plotly_chart(fig, use_container_width=True)
+                
+                # 날짜 정보 표시
+                render_date_info(person_current, person_prev)
             
             st.markdown("---")
 
