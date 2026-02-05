@@ -14,13 +14,18 @@ st.set_page_config(
 
 st.title("📊 디자이너 리소스 관리 대시보드")
 
-# 디자이너 분류
-try:
-    IMAGE_DESIGNERS = st.secrets.get("image_designers", ["박유정", "권지연", "안서현", "도혜진", "김성웅"])
-    VIDEO_DESIGNERS = st.secrets.get("video_designers", ["은누리", "박시은", "이재호", "이현성"])
-except:
-    IMAGE_DESIGNERS = ["박유정", "권지연", "안서현", "도혜진", "김성웅"]
-    VIDEO_DESIGNERS = ["은누리", "박시은", "이재호", "이현성"]
+# 디자이너 분류 (3팀 전용)
+TEAM_3_IMAGE_DESIGNERS = ["박유정", "권지연", "안서현", "도혜진", "김성웅"]
+TEAM_3_VIDEO_DESIGNERS = ["은누리", "박시은", "이재호", "이현성"]
+
+# 나중에 다른 팀 추가 시 여기 추가
+TEAM_DESIGNERS = {
+    "3팀": {
+        "image": TEAM_3_IMAGE_DESIGNERS,
+        "video": TEAM_3_VIDEO_DESIGNERS
+    },
+    # "1팀": {"image": [...], "video": [...]},  # 나중에 추가
+}
 
 # Secrets에서 자동으로 읽기
 try:
@@ -38,50 +43,74 @@ try:
     )
     client = gspread.authorize(credentials)
     
+    # 팀 선택 (사이드바)
+    st.sidebar.title("⚙️ 설정")
+    selected_team = st.sidebar.selectbox(
+        "팀 선택",
+        options=["1팀", "2팀", "3팀", "4팀", "5팀", "6팀"],
+        index=2  # 기본: 3팀
+    )
+    
     sheet = client.open_by_url(sheet_url)
-    # 임시: 첫 번째 탭 읽기 (탭 이름 확인 후 수정 필요)
-    worksheet = sheet.get_worksheet(0)
     
-    # 헤더 중복 문제 해결
-    data = worksheet.get_all_records(expected_headers=[])
-    df = pd.DataFrame(data)
+    # 선택한 팀의 시트 읽기
+    try:
+        worksheet = sheet.worksheet(selected_team)
+    except:
+        st.error(f"❌ '{selected_team}' 시트를 찾을 수 없습니다. 첫 번째 시트를 사용합니다.")
+        worksheet = sheet.get_worksheet(0)
     
-    # 디버그: 컬럼명 확인
-    st.write("📋 시트 컬럼명:", df.columns.tolist())
+    # 모든 데이터 가져오기
+    all_data = worksheet.get_all_values()
     
-    # 컬럼명 정리 (공백 제거)
-    df.columns = df.columns.str.strip()
+    # 1행을 헤더로 사용
+    headers = all_data[0]
+    data_rows = all_data[1:]
     
-    # 날짜 컬럼 확인
-    if '날짜' not in df.columns:
-        st.error(f"❌ '날짜' 컬럼을 찾을 수 없습니다. 현재 컬럼: {df.columns.tolist()}")
-        st.stop()
+    # DataFrame 생성
+    df = pd.DataFrame(data_rows, columns=headers)
+    
+    # 빈 컬럼명 제거
+    df = df.loc[:, df.columns != '']
     
     # 데이터 전처리
-    # 날짜가 실제로 있는 행만 선택 (빈칸, 헤더 제외)
+    # 1. 날짜가 비어있지 않은 행만
     df = df[df['날짜'].notna()]
-    df = df[df['날짜'] != '']
-    df = df[df['날짜'] != '날짜']
+    df = df[df['날짜'].astype(str).str.strip() != '']
     
-    # 날짜 변환 (에러 무시)
+    # 2. 날짜 형식 변환 시도 (실패하면 제외)
     df['날짜_변환'] = pd.to_datetime(
         df['날짜'].astype(str).str.replace(' ', '').str.replace('.', '-'), 
         errors='coerce'
     )
     
-    # 날짜 변환 실패한 행 제거
+    # 3. 날짜 변환 성공한 행만 (유효한 날짜 형식만)
     df = df[df['날짜_변환'].notna()].copy()
     
-    df['제작자_채움'] = df['제작자'].replace('', None)
-    df['제작자_채움'] = df['제작자_채움'].fillna(method='ffill')
+    st.write(f"✅ 유효한 데이터 {len(df)}개 인식")
     
-    df = df[df['제작자_채움'].notna()].copy()
-    df = df[df['제작자_채움'] != ''].copy()
+    # 선택된 팀의 디자이너 가져오기
+    if selected_team in TEAM_DESIGNERS:
+        IMAGE_DESIGNERS = TEAM_DESIGNERS[selected_team]["image"]
+        VIDEO_DESIGNERS = TEAM_DESIGNERS[selected_team]["video"]
+    else:
+        # 팀 정보 없으면 데이터에서 자동 감지
+        st.warning(f"⚠️ {selected_team} 디자이너 정보가 없습니다. 전체 제작자를 표시합니다.")
+        all_designers = df['제작자'].unique().tolist()
+        IMAGE_DESIGNERS = all_designers
+        VIDEO_DESIGNERS = []
     
+    # 제작자 정보 처리 (비어있으면 제외)
+    df = df[df['제작자'].notna()].copy()
+    df = df[df['제작자'].astype(str).str.strip() != ''].copy()
+    df['제작자_채움'] = df['제작자']
+    
+    # 콘텐츠 수 처리
     df['콘텐츠 수'] = pd.to_numeric(df['콘텐츠 수'], errors='coerce').fillna(0).astype(int)
     
+    # 콘텐츠 유형 처리
     df = df[df['콘텐츠 유형'].notna()].copy()
-    df = df[df['콘텐츠 유형'] != ''].copy()
+    df = df[df['콘텐츠 유형'].astype(str).str.strip() != ''].copy()
     
     df['주차'] = df['날짜_변환'].dt.strftime('%Y-W%U')
     df['주차_정렬용'] = df['날짜_변환'].dt.to_period('W')
