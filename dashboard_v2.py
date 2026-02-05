@@ -463,8 +463,19 @@ try:
         # AI 개수 별도 계산 (원본 데이터에서)
         ai_count = person_df[person_df['콘텐츠 유형'].str.contains('ai', case=False, na=False)]['콘텐츠 수'].sum()
         
-        # 브랜드 목록
-        brands = person_df['브랜드명'].unique().tolist()
+        # 브랜드 목록 (선택된 월에 진행한 브랜드만)
+        # 컬럼명이 '브랜드', '브랜드명' 등 다양할 수 있으므로 확인
+        brand_column = None
+        for col in ['브랜드', '브랜드명', 'Brand', 'brand']:
+            if col in person_df.columns:
+                brand_column = col
+                break
+        
+        if brand_column:
+            brands = person_df[brand_column].dropna().unique().tolist()
+            brands = [b for b in brands if str(b).strip() != '']
+        else:
+            brands = []
         
         # 총 제작량
         total = person_df['콘텐츠 수'].sum()
