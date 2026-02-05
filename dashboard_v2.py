@@ -663,10 +663,10 @@ try:
             
             with col2:
                 # 개인 12개월 데이터
-                person_year = df_year[df_12months['제작자_채움'] == person['이름']]
+                person_year = df_year[df_year['제작자_채움'] == person['이름']]
                 
                 # 그래프 생성
-                fig, person_stats_table = create_person_graph(person['이름'], person_year, selected_month_period)
+                fig, person_year_stats = create_person_graph(person['이름'], person_year, selected_month_period)
                 st.plotly_chart(fig, use_container_width=True)
                 
                 # 년도 데이터 표 (가로 레이아웃)
@@ -717,10 +717,10 @@ try:
             
             with col2:
                 # 개인 12개월 데이터
-                person_year = df_year[df_12months['제작자_채움'] == person['이름']]
+                person_year = df_year[df_year['제작자_채움'] == person['이름']]
                 
                 # 그래프 생성
-                fig, person_stats_table = create_person_graph(person['이름'], person_year, selected_month_period)
+                fig, person_year_stats = create_person_graph(person['이름'], person_year, selected_month_period)
                 st.plotly_chart(fig, use_container_width=True)
                 
                 # 년도 데이터 표 (가로 레이아웃)
