@@ -419,15 +419,21 @@ try:
     
     # 월 선택 (개인 카드용)
     available_months_for_detail = sorted(df['월'].unique(), reverse=True)
-    month_options = ['전체'] + [str(m) for m in available_months_for_detail]
+    month_options_dict = {f"{m.year}년 {m.month}월": m for m in available_months_for_detail}
+    month_options_display = ['전체'] + list(month_options_dict.keys())
     
     # 기본값: 최신 월
-    selected_month_for_detail = st.selectbox(
+    selected_month_display = st.selectbox(
         "📅 월 선택 (개인 상세)",
-        options=month_options,
-        index=1,
-        format_func=lambda x: f"{x.year}년 {x.month}월" if x != '전체' else '전체'
+        options=month_options_display,
+        index=1
     )
+    
+    # 선택된 Period 가져오기
+    if selected_month_display == '전체':
+        selected_month_for_detail = '전체'
+    else:
+        selected_month_for_detail = month_options_dict[selected_month_display]
     
     # ============================================
     # 사람별 카드 + 개인 그래프
