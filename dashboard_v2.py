@@ -247,11 +247,10 @@ try:
         height=450,
         xaxis_title="월",
         yaxis_title="제작량 (개)",
-        yaxis=dict(rangemode='tozero'),
         hovermode='x unified',
         font=dict(size=16),
         xaxis=dict(title_font=dict(size=18)),
-        yaxis=dict(title_font=dict(size=18)),
+        yaxis=dict(rangemode='tozero', title_font=dict(size=18)),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=14))
     )
     st.plotly_chart(fig_monthly, use_container_width=True)
@@ -341,11 +340,10 @@ try:
         height=450,
         xaxis_title="주차",
         yaxis_title="제작량 (개)",
-        yaxis=dict(rangemode='tozero'),
         hovermode='x unified',
         font=dict(size=16),
         xaxis=dict(title_font=dict(size=18)),
-        yaxis=dict(title_font=dict(size=18)),
+        yaxis=dict(rangemode='tozero', title_font=dict(size=18)),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=14))
     )
     st.plotly_chart(fig_weekly, use_container_width=True)
