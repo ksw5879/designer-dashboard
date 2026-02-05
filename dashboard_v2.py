@@ -42,7 +42,8 @@ try:
     # 임시: 첫 번째 탭 읽기 (탭 이름 확인 후 수정 필요)
     worksheet = sheet.get_worksheet(0)
     
-    data = worksheet.get_all_records()
+    # 헤더 중복 문제 해결
+    data = worksheet.get_all_records(expected_headers=[])
     df = pd.DataFrame(data)
     
     # 데이터 전처리
