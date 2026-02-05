@@ -185,9 +185,6 @@ try:
     # 이미지 디자이너 데이터
     monthly_image = df_image.groupby('월')['콘텐츠 수'].sum().reset_index()
     monthly_image.columns = ['월', '총제작량']
-    # 월 표시 포맷: 2026년 1월
-    monthly_image['월_표시'] = monthly_image['월'].apply(lambda x: f"{x.year}년 {x.month}월")
-    monthly_image = monthly_image.sort_values('월')
     
     monthly_image_new = df_image[df_image['신규여부'] == True].groupby('월')['콘텐츠 수'].sum().reset_index()
     monthly_image_new.columns = ['월', '신규제작량']
@@ -197,9 +194,32 @@ try:
     # 영상 디자이너 데이터
     monthly_video = df_video.groupby('월')['콘텐츠 수'].sum().reset_index()
     monthly_video.columns = ['월', '총제작량']
+    
+    monthly_video_new = df_video[df_video['신규여부'] == True].groupby('월')['콘텐츠 수'].sum().reset_index()
+    monthly_video_new.columns = ['월', '신규제작량']
+    
+    monthly_video_stats = pd.merge(monthly_video, monthly_video_new, on='월', how='left').fillna(0)
+    
+    # 최소 5개월 표시를 위해 빈 월 추가
+    all_months = pd.period_range(start=df['날짜_변환'].min(), end=df['날짜_변환'].max(), freq='M')
+    # 최근 5개월 포함하도록
+    if len(all_months) < 5:
+        start_month = df['날짜_변환'].max() - pd.DateOffset(months=4)
+        all_months = pd.period_range(start=start_month, end=df['날짜_변환'].max(), freq='M')
+    
+    # 빈 데이터프레임 생성
+    full_months = pd.DataFrame({'월': all_months})
+    
+    # 병합 (빈 월은 0으로)
+    monthly_image_stats = pd.merge(full_months, monthly_image_stats, on='월', how='left').fillna(0)
+    monthly_video_stats = pd.merge(full_months, monthly_video_stats, on='월', how='left').fillna(0)
+    
     # 월 표시 포맷: 2026년 1월
-    monthly_video['월_표시'] = monthly_video['월'].apply(lambda x: f"{x.year}년 {x.month}월")
-    monthly_video = monthly_video.sort_values('월')
+    monthly_image_stats['월_표시'] = monthly_image_stats['월'].apply(lambda x: f"{x.year}년 {x.month}월")
+    monthly_image_stats = monthly_image_stats.sort_values('월')
+    
+    monthly_video_stats['월_표시'] = monthly_video_stats['월'].apply(lambda x: f"{x.year}년 {x.month}월")
+    monthly_video_stats = monthly_video_stats.sort_values('월')
     
     monthly_video_new = df_video[df_video['신규여부'] == True].groupby('월')['콘텐츠 수'].sum().reset_index()
     monthly_video_new.columns = ['월', '신규제작량']
@@ -286,10 +306,17 @@ try:
     month_weeks = sorted(df_month_filtered['주차_정렬용'].unique())
     
     if len(month_weeks) > 0:
+        # 최소 5주차 표시 (없으면 0으로 채우기)
+        max_weeks = max(5, len(month_weeks))
+        
         # 해당 월의 몇 주차인지 계산 (1주차, 2주차, 3주차...)
         week_labels = {}
-        for idx, week in enumerate(month_weeks, 1):
-            week_labels[week] = f"{idx}주차"
+        for idx in range(1, max_weeks + 1):
+            if idx <= len(month_weeks):
+                week_labels[month_weeks[idx-1]] = f"{idx}주차"
+        
+        # 빈 주차를 위한 전체 주차 레이블
+        all_week_labels = [f"{i}주차" for i in range(1, max_weeks + 1)]
         
         # 타이틀
         current_week_idx = len(month_weeks)
@@ -298,24 +325,30 @@ try:
         # 이미지 디자이너 주차별 집계
         weekly_image = df_image_month.groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
         weekly_image.columns = ['주차', '총제작량']
-        weekly_image['주차_표시'] = weekly_image['주차'].map(week_labels)
-        weekly_image = weekly_image.sort_values('주차')
         
         weekly_image_new = df_image_month[df_image_month['신규여부'] == True].groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
         weekly_image_new.columns = ['주차', '신규제작량']
         
         weekly_image_stats = pd.merge(weekly_image, weekly_image_new, on='주차', how='left').fillna(0)
         
+        # 빈 주차 추가
+        full_weeks_image = pd.DataFrame({'주차_표시': all_week_labels})
+        weekly_image_stats['주차_표시'] = weekly_image_stats['주차'].map(week_labels)
+        weekly_image_stats = pd.merge(full_weeks_image, weekly_image_stats[['주차_표시', '총제작량', '신규제작량']], on='주차_표시', how='left').fillna(0)
+        
         # 영상 디자이너 주차별 집계
         weekly_video = df_video_month.groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
         weekly_video.columns = ['주차', '총제작량']
-        weekly_video['주차_표시'] = weekly_video['주차'].map(week_labels)
-        weekly_video = weekly_video.sort_values('주차')
         
         weekly_video_new = df_video_month[df_video_month['신규여부'] == True].groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
         weekly_video_new.columns = ['주차', '신규제작량']
         
         weekly_video_stats = pd.merge(weekly_video, weekly_video_new, on='주차', how='left').fillna(0)
+        
+        # 빈 주차 추가
+        full_weeks_video = pd.DataFrame({'주차_표시': all_week_labels})
+        weekly_video_stats['주차_표시'] = weekly_video_stats['주차'].map(week_labels)
+        weekly_video_stats = pd.merge(full_weeks_video, weekly_video_stats[['주차_표시', '총제작량', '신규제작량']], on='주차_표시', how='left').fillna(0)
         
         # 2열로 그래프 배치
         col1, col2 = st.columns(2)
