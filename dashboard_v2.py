@@ -73,8 +73,15 @@ try:
     # 빈 컬럼명 제거
     df = df.loc[:, df.columns != '']
     
+    # 병합 셀 처리: 날짜와 제작자 빈칸 채우기
+    df['날짜'] = df['날짜'].replace('', None)
+    df['날짜'] = df['날짜'].fillna(method='ffill')
+    
+    df['제작자'] = df['제작자'].replace('', None)
+    df['제작자'] = df['제작자'].fillna(method='ffill')
+    
     # 데이터 전처리
-    # 1. 날짜가 비어있지 않은 행만
+    # 1. 날짜가 비어있지 않은 행만 (ffill 이후)
     df = df[df['날짜'].notna()]
     df = df[df['날짜'].astype(str).str.strip() != '']
     
@@ -100,9 +107,7 @@ try:
         IMAGE_DESIGNERS = all_designers
         VIDEO_DESIGNERS = []
     
-    # 제작자 정보 처리 (비어있으면 제외)
-    df = df[df['제작자'].notna()].copy()
-    df = df[df['제작자'].astype(str).str.strip() != ''].copy()
+    # 제작자는 이미 ffill로 채워졌으니 그냥 사용
     df['제작자_채움'] = df['제작자']
     
     # 콘텐츠 수 처리
