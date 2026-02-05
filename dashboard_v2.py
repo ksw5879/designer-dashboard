@@ -204,184 +204,190 @@ try:
     
     monthly_video_stats = pd.merge(monthly_video, monthly_video_new, on='월', how='left').fillna(0)
     
-    # 합쳐진 그래프
-    fig_monthly = go.Figure()
+    # 2열로 그래프 배치
+    col1, col2 = st.columns(2)
     
-    # 이미지 디자이너
-    fig_monthly.add_trace(go.Scatter(
-        x=monthly_image_stats['월_표시'],
-        y=monthly_image_stats['총제작량'],
-        mode='lines+markers',
-        name='🎨 이미지 총제작량',
-        line=dict(color='#4A90E2', width=3),
-        marker=dict(size=10)
-    ))
-    fig_monthly.add_trace(go.Scatter(
-        x=monthly_image_stats['월_표시'],
-        y=monthly_image_stats['신규제작량'],
-        mode='lines+markers',
-        name='🎨 이미지 신규',
-        line=dict(color='#E67E22', width=3),
-        marker=dict(size=10)
-    ))
+    with col1:
+        st.markdown("<h3 style='font-size: 20px; text-align: center;'>🎨 이미지 디자이너</h3>", unsafe_allow_html=True)
+        
+        fig_monthly_image = go.Figure()
+        fig_monthly_image.add_trace(go.Scatter(
+            x=monthly_image_stats['월_표시'],
+            y=monthly_image_stats['총제작량'],
+            mode='lines+markers',
+            name='총 제작량',
+            line=dict(color='#4A90E2', width=3),
+            marker=dict(size=10)
+        ))
+        fig_monthly_image.add_trace(go.Scatter(
+            x=monthly_image_stats['월_표시'],
+            y=monthly_image_stats['신규제작량'],
+            mode='lines+markers',
+            name='신규 제작량',
+            line=dict(color='#E67E22', width=3),
+            marker=dict(size=10)
+        ))
+        fig_monthly_image.update_layout(
+            height=400,
+            xaxis_title="월",
+            yaxis_title="제작량 (개)",
+            hovermode='x unified',
+            font=dict(size=14),
+            xaxis=dict(title_font=dict(size=16)),
+            yaxis=dict(rangemode='tozero', title_font=dict(size=16)),
+            legend=dict(font=dict(size=12))
+        )
+        st.plotly_chart(fig_monthly_image, use_container_width=True)
     
-    # 영상 디자이너
-    fig_monthly.add_trace(go.Scatter(
-        x=monthly_video_stats['월_표시'],
-        y=monthly_video_stats['총제작량'],
-        mode='lines+markers',
-        name='🎬 영상 총제작량',
-        line=dict(color='#4A90E2', width=3, dash='dash'),
-        marker=dict(size=10, symbol='square')
-    ))
-    fig_monthly.add_trace(go.Scatter(
-        x=monthly_video_stats['월_표시'],
-        y=monthly_video_stats['신규제작량'],
-        mode='lines+markers',
-        name='🎬 영상 신규',
-        line=dict(color='#E67E22', width=3, dash='dash'),
-        marker=dict(size=10, symbol='square')
-    ))
-    
-    fig_monthly.update_layout(
-        height=450,
-        xaxis_title="월",
-        yaxis_title="제작량 (개)",
-        hovermode='x unified',
-        font=dict(size=16),
-        xaxis=dict(title_font=dict(size=18)),
-        yaxis=dict(rangemode='tozero', title_font=dict(size=18)),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=14))
-    )
-    st.plotly_chart(fig_monthly, use_container_width=True)
+    with col2:
+        st.markdown("<h3 style='font-size: 20px; text-align: center;'>🎬 영상 디자이너</h3>", unsafe_allow_html=True)
+        
+        fig_monthly_video = go.Figure()
+        fig_monthly_video.add_trace(go.Scatter(
+            x=monthly_video_stats['월_표시'],
+            y=monthly_video_stats['총제작량'],
+            mode='lines+markers',
+            name='총 제작량',
+            line=dict(color='#4A90E2', width=3),
+            marker=dict(size=10)
+        ))
+        fig_monthly_video.add_trace(go.Scatter(
+            x=monthly_video_stats['월_표시'],
+            y=monthly_video_stats['신규제작량'],
+            mode='lines+markers',
+            name='신규 제작량',
+            line=dict(color='#E67E22', width=3),
+            marker=dict(size=10)
+        ))
+        fig_monthly_video.update_layout(
+            height=400,
+            xaxis_title="월",
+            yaxis_title="제작량 (개)",
+            hovermode='x unified',
+            font=dict(size=14),
+            xaxis=dict(title_font=dict(size=16)),
+            yaxis=dict(rangemode='tozero', title_font=dict(size=16)),
+            legend=dict(font=dict(size=12))
+        )
+        st.plotly_chart(fig_monthly_video, use_container_width=True)
     
     st.markdown("---")
     
-    # 그래프 2: 주차별 제작량
-    available_weeks = sorted(df['주차_정렬용'].unique(), reverse=True)
-    current_week = available_weeks[0] if len(available_weeks) > 0 else None
+
+    # 그래프 2: 주차별 제작량 (선택된 월 기준)
+    # 선택된 월의 주차만 필터링
+    df_month_filtered = df[(df['날짜_변환'].dt.year == selected_year) & (df['날짜_변환'].dt.month == selected_month)]
+    df_image_month = df_image[(df_image['날짜_변환'].dt.year == selected_year) & (df_image['날짜_변환'].dt.month == selected_month)]
+    df_video_month = df_video[(df_video['날짜_변환'].dt.year == selected_year) & (df_video['날짜_변환'].dt.month == selected_month)]
     
-    # 현재 주차 계산
-    if current_week:
-        week_num = current_week.start_time.isocalendar()[1]
-        week_month = current_week.start_time.month
-        st.markdown(f"<h2 style='text-align: center; font-size: 32px;'>{week_month}월 {week_num}주차</h2>", unsafe_allow_html=True)
-    else:
-        st.markdown("<h2 style='text-align: center; font-size: 32px;'>주차별 제작량</h2>", unsafe_allow_html=True)
+    # 해당 월의 주차 목록
+    month_weeks = sorted(df_month_filtered['주차_정렬용'].unique())
     
-    recent_8_weeks = available_weeks[:min(8, len(available_weeks))]
-    
-    # 이미지 디자이너 데이터
-    week_image = df_image[df_image['주차_정렬용'].isin(recent_8_weeks)]
-    
-    weekly_image = week_image.groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
-    weekly_image.columns = ['주차', '총제작량']
-    weekly_image['주차_표시'] = weekly_image['주차'].astype(str).str[-2:] + '주차'
-    weekly_image = weekly_image.sort_values('주차')
-    
-    weekly_image_new = week_image[week_image['신규여부'] == True].groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
-    weekly_image_new.columns = ['주차', '신규제작량']
-    
-    weekly_image_stats = pd.merge(weekly_image, weekly_image_new, on='주차', how='left').fillna(0)
-    
-    # 영상 디자이너 데이터
-    week_video = df_video[df_video['주차_정렬용'].isin(recent_8_weeks)]
-    
-    weekly_video = week_video.groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
-    weekly_video.columns = ['주차', '총제작량']
-    weekly_video['주차_표시'] = weekly_video['주차'].astype(str).str[-2:] + '주차'
-    weekly_video = weekly_video.sort_values('주차')
-    
-    weekly_video_new = week_video[week_video['신규여부'] == True].groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
-    weekly_video_new.columns = ['주차', '신규제작량']
-    
-    weekly_video_stats = pd.merge(weekly_video, weekly_video_new, on='주차', how='left').fillna(0)
-    
-    # 합쳐진 그래프
-    fig_weekly = go.Figure()
-    
-    # 이미지 디자이너
-    fig_weekly.add_trace(go.Scatter(
-        x=weekly_image_stats['주차_표시'],
-        y=weekly_image_stats['총제작량'],
-        mode='lines+markers',
-        name='🎨 이미지 총제작량',
-        line=dict(color='#4A90E2', width=3),
-        marker=dict(size=10)
-    ))
-    fig_weekly.add_trace(go.Scatter(
-        x=weekly_image_stats['주차_표시'],
-        y=weekly_image_stats['신규제작량'],
-        mode='lines+markers',
-        name='🎨 이미지 신규',
-        line=dict(color='#E67E22', width=3),
-        marker=dict(size=10)
-    ))
-    
-    # 영상 디자이너
-    fig_weekly.add_trace(go.Scatter(
-        x=weekly_video_stats['주차_표시'],
-        y=weekly_video_stats['총제작량'],
-        mode='lines+markers',
-        name='🎬 영상 총제작량',
-        line=dict(color='#4A90E2', width=3, dash='dash'),
-        marker=dict(size=10, symbol='square')
-    ))
-    fig_weekly.add_trace(go.Scatter(
-        x=weekly_video_stats['주차_표시'],
-        y=weekly_video_stats['신규제작량'],
-        mode='lines+markers',
-        name='🎬 영상 신규',
-        line=dict(color='#E67E22', width=3, dash='dash'),
-        marker=dict(size=10, symbol='square')
-    ))
-    
-    fig_weekly.update_layout(
-        height=450,
-        xaxis_title="주차",
-        yaxis_title="제작량 (개)",
-        hovermode='x unified',
-        font=dict(size=16),
-        xaxis=dict(title_font=dict(size=18)),
-        yaxis=dict(rangemode='tozero', title_font=dict(size=18)),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=14))
-    )
-    st.plotly_chart(fig_weekly, use_container_width=True)
+    if len(month_weeks) > 0:
+        # 해당 월의 몇 주차인지 계산 (1주차, 2주차, 3주차...)
+        week_labels = {}
+        for idx, week in enumerate(month_weeks, 1):
+            week_labels[week] = f"{idx}주차"
+        
+        # 타이틀
+        current_week_idx = len(month_weeks)
+        st.markdown(f"<h2 style='text-align: center; font-size: 32px;'>{selected_month}월 {current_week_idx}주차</h2>", unsafe_allow_html=True)
+        
+        # 이미지 디자이너 주차별 집계
+        weekly_image = df_image_month.groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
+        weekly_image.columns = ['주차', '총제작량']
+        weekly_image['주차_표시'] = weekly_image['주차'].map(week_labels)
+        weekly_image = weekly_image.sort_values('주차')
+        
+        weekly_image_new = df_image_month[df_image_month['신규여부'] == True].groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
+        weekly_image_new.columns = ['주차', '신규제작량']
+        
+        weekly_image_stats = pd.merge(weekly_image, weekly_image_new, on='주차', how='left').fillna(0)
+        
+        # 영상 디자이너 주차별 집계
+        weekly_video = df_video_month.groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
+        weekly_video.columns = ['주차', '총제작량']
+        weekly_video['주차_표시'] = weekly_video['주차'].map(week_labels)
+        weekly_video = weekly_video.sort_values('주차')
+        
+        weekly_video_new = df_video_month[df_video_month['신규여부'] == True].groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
+        weekly_video_new.columns = ['주차', '신규제작량']
+        
+        weekly_video_stats = pd.merge(weekly_video, weekly_video_new, on='주차', how='left').fillna(0)
+        
+        # 2열로 그래프 배치
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("<h3 style='font-size: 20px; text-align: center;'>🎨 이미지 디자이너</h3>", unsafe_allow_html=True)
+            
+            fig_weekly_image = go.Figure()
+            fig_weekly_image.add_trace(go.Scatter(
+                x=weekly_image_stats['주차_표시'],
+                y=weekly_image_stats['총제작량'],
+                mode='lines+markers',
+                name='총 제작량',
+                line=dict(color='#4A90E2', width=3),
+                marker=dict(size=10)
+            ))
+            fig_weekly_image.add_trace(go.Scatter(
+                x=weekly_image_stats['주차_표시'],
+                y=weekly_image_stats['신규제작량'],
+                mode='lines+markers',
+                name='신규 제작량',
+                line=dict(color='#E67E22', width=3),
+                marker=dict(size=10)
+            ))
+            fig_weekly_image.update_layout(
+                height=400,
+                xaxis_title="주차",
+                yaxis_title="제작량 (개)",
+                hovermode='x unified',
+                font=dict(size=14),
+                xaxis=dict(title_font=dict(size=16)),
+                yaxis=dict(rangemode='tozero', title_font=dict(size=16)),
+                legend=dict(font=dict(size=12))
+            )
+            st.plotly_chart(fig_weekly_image, use_container_width=True)
+        
+        with col2:
+            st.markdown("<h3 style='font-size: 20px; text-align: center;'>🎬 영상 디자이너</h3>", unsafe_allow_html=True)
+            
+            fig_weekly_video = go.Figure()
+            fig_weekly_video.add_trace(go.Scatter(
+                x=weekly_video_stats['주차_표시'],
+                y=weekly_video_stats['총제작량'],
+                mode='lines+markers',
+                name='총 제작량',
+                line=dict(color='#4A90E2', width=3),
+                marker=dict(size=10)
+            ))
+            fig_weekly_video.add_trace(go.Scatter(
+                x=weekly_video_stats['주차_표시'],
+                y=weekly_video_stats['신규제작량'],
+                mode='lines+markers',
+                name='신규 제작량',
+                line=dict(color='#E67E22', width=3),
+                marker=dict(size=10)
+            ))
+            fig_weekly_video.update_layout(
+                height=400,
+                xaxis_title="주차",
+                yaxis_title="제작량 (개)",
+                hovermode='x unified',
+                font=dict(size=14),
+                xaxis=dict(title_font=dict(size=16)),
+                yaxis=dict(rangemode='tozero', title_font=dict(size=16)),
+                legend=dict(font=dict(size=12))
+            )
+            st.plotly_chart(fig_weekly_video, use_container_width=True)
     
     st.markdown("---")
     
     # 주차 선택 (개인 카드용)
+    available_weeks = sorted(df['주차_정렬용'].unique(), reverse=True)
     week_options = ['전체'] + [str(w) for w in available_weeks]
     selected_week = st.selectbox("📅 주차 선택 (개인 상세)", options=week_options, index=1)
-    
-    # ============================================
-    # 사람별 카드 + 개인 그래프
-    # ============================================
-    st.markdown("---")
-    st.markdown("## 👥 사람별 제작 현황")
-    
-    # 필터링
-    if selected_week != '전체':
-        selected_week_period = pd.Period(selected_week, freq='W')
-        df_filtered = df[df['주차_정렬용'] == selected_week_period]
-        
-        # 전주 데이터도 가져오기
-        all_weeks = sorted(df['주차_정렬용'].unique(), reverse=True)
-        current_week_idx = all_weeks.index(selected_week_period) if selected_week_period in all_weeks else -1
-        
-        if current_week_idx >= 0 and current_week_idx < len(all_weeks) - 1:
-            prev_week_period = all_weeks[current_week_idx + 1]
-            df_prev_week = df[df['주차_정렬용'] == prev_week_period]
-        else:
-            df_prev_week = pd.DataFrame()  # 전주 데이터 없음
-    else:
-        df_filtered = df
-        df_prev_week = pd.DataFrame()
-    
-    # 사람별 통계 계산
-    def calculate_person_stats(person_name):
-        person_df = df_filtered[df_filtered['제작자_채움'] == person_name]
-        
         # 유형별 집계
         type_counts = person_df.groupby('콘텐츠유형_간소화')['콘텐츠 수'].sum().to_dict()
         
