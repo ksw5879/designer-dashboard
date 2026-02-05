@@ -417,10 +417,17 @@ try:
     
     st.markdown("---")
     
-    # 주차 선택 (개인 카드용)
-    available_weeks = sorted(df['주차_정렬용'].unique(), reverse=True)
-    week_options = ['전체'] + [str(w) for w in available_weeks]
-    selected_week = st.selectbox("📅 주차 선택 (개인 상세)", options=week_options, index=1)
+    # 월 선택 (개인 카드용)
+    available_months_for_detail = sorted(df['월'].unique(), reverse=True)
+    month_options = ['전체'] + [str(m) for m in available_months_for_detail]
+    
+    # 기본값: 최신 월
+    selected_month_for_detail = st.selectbox(
+        "📅 월 선택 (개인 상세)",
+        options=month_options,
+        index=1,
+        format_func=lambda x: f"{x.year}년 {x.month}월" if x != '전체' else '전체'
+    )
     
     # ============================================
     # 사람별 카드 + 개인 그래프
@@ -429,22 +436,24 @@ try:
     st.markdown("## 👥 사람별 제작 현황")
     
     # 필터링
-    if selected_week != '전체':
-        selected_week_period = pd.Period(selected_week, freq='W')
-        df_filtered = df[df['주차_정렬용'] == selected_week_period]
+    if selected_month_for_detail != '전체':
+        selected_month_period = pd.Period(selected_month_for_detail, freq='M')
+        df_filtered = df[df['월'] == selected_month_period]
         
-        # 전주 데이터도 가져오기
-        all_weeks = sorted(df['주차_정렬용'].unique(), reverse=True)
-        current_week_idx = all_weeks.index(selected_week_period) if selected_week_period in all_weeks else -1
+        # 이전 11개월 데이터 (총 12개월)
+        all_months = sorted(df['월'].unique(), reverse=True)
+        current_month_idx = all_months.index(selected_month_period) if selected_month_period in all_months else -1
         
-        if current_week_idx >= 0 and current_week_idx < len(all_weeks) - 1:
-            prev_week_period = all_weeks[current_week_idx + 1]
-            df_prev_week = df[df['주차_정렬용'] == prev_week_period]
+        # 선택 월 포함 이전 12개월
+        if current_month_idx >= 0:
+            last_12_months = all_months[current_month_idx:min(current_month_idx + 12, len(all_months))]
         else:
-            df_prev_week = pd.DataFrame()
+            last_12_months = all_months[:12]
+        
+        df_12months = df[df['월'].isin(last_12_months)]
     else:
         df_filtered = df
-        df_prev_week = pd.DataFrame()
+        df_12months = df
     
     # 사람별 통계 계산
     def calculate_person_stats(person_name):
@@ -507,130 +516,53 @@ try:
         """, unsafe_allow_html=True)
     
     # 개인 그래프 생성 함수
-    def create_person_graph(person_name, current_week_data, prev_week_data):
-        # 기본 요일 템플릿 생성 (월~금)
-        weekdays_template = pd.DataFrame({
-            '요일': [0, 1, 2, 3, 4],
-            '요일_표시': ['월', '화', '수', '목', '금']
-        })
+    # 개인 그래프 생성 함수 (12개월 월별)
+    def create_person_graph(person_name, person_12months_data, selected_month_period):
+        # 해당 인물의 12개월 데이터
+        person_monthly = person_12months_data.groupby('월')['콘텐츠 수'].sum().reset_index()
+        person_monthly.columns = ['월', '총제작량']
         
-        # 이번주 일별 데이터 (평일만)
-        current_week_data = current_week_data[current_week_data['날짜_변환'].dt.dayofweek < 5]
+        person_monthly_new = person_12months_data[person_12months_data['신규여부'] == True].groupby('월')['콘텐츠 수'].sum().reset_index()
+        person_monthly_new.columns = ['월', '신규제작량']
         
-        if len(current_week_data) > 0:
-            current_daily = current_week_data.groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
-            current_daily.columns = ['날짜', '총제작량']
-            current_daily['요일'] = current_daily['날짜'].dt.dayofweek
-            current_daily['날짜_표시'] = current_daily['날짜'].dt.strftime('%m/%d')
-            
-            current_new = current_week_data[current_week_data['신규여부'] == True].groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
-            current_new.columns = ['날짜', '신규제작량']
-            current_new['요일'] = pd.to_datetime(current_new['날짜']).dt.dayofweek
-            
-            current_stats = pd.merge(current_daily, current_new[['요일', '신규제작량']], on='요일', how='left').fillna(0)
-            
-            # 템플릿과 병합하여 빈 요일 채우기
-            current_stats = pd.merge(weekdays_template, current_stats[['요일', '총제작량', '신규제작량', '날짜_표시']], on='요일', how='left').fillna(0)
-        else:
-            current_stats = weekdays_template.copy()
-            current_stats['총제작량'] = 0
-            current_stats['신규제작량'] = 0
-            current_stats['날짜_표시'] = '-'
-        
-        # 전주 일별 데이터 (평일만)
-        if len(prev_week_data) > 0:
-            prev_week_data = prev_week_data[prev_week_data['날짜_변환'].dt.dayofweek < 5]
-            
-            prev_daily = prev_week_data.groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
-            prev_daily.columns = ['날짜', '총제작량']
-            prev_daily['요일'] = prev_daily['날짜'].dt.dayofweek
-            prev_daily['날짜_표시'] = prev_daily['날짜'].dt.strftime('%m/%d')
-            
-            prev_new = prev_week_data[prev_week_data['신규여부'] == True].groupby('날짜_변환')['콘텐츠 수'].sum().reset_index()
-            prev_new.columns = ['날짜', '신규제작량']
-            prev_new['요일'] = pd.to_datetime(prev_new['날짜']).dt.dayofweek
-            
-            prev_stats = pd.merge(prev_daily, prev_new[['요일', '신규제작량']], on='요일', how='left').fillna(0)
-            
-            # 템플릿과 병합하여 빈 요일 채우기
-            prev_stats = pd.merge(weekdays_template, prev_stats[['요일', '총제작량', '신규제작량', '날짜_표시']], on='요일', how='left').fillna(0)
-        else:
-            prev_stats = pd.DataFrame()
+        person_stats = pd.merge(person_monthly, person_monthly_new, on='월', how='left').fillna(0)
+        person_stats['월_표시'] = person_stats['월'].apply(lambda x: f"{x.year}년 {x.month}월")
+        person_stats = person_stats.sort_values('월')
         
         # 그래프 생성
         fig = go.Figure()
         
-        # 전주 데이터 (40% 투명, 점선)
-        if len(prev_stats) > 0:
-            fig.add_trace(go.Scatter(
-                x=prev_stats['요일_표시'],
-                y=prev_stats['총제작량'],
-                mode='lines+markers',
-                name='전주 총제작량',
-                line=dict(color='#4A90E2', width=2, dash='dot'),
-                marker=dict(size=6),
-                opacity=0.4,
-                text=prev_stats['날짜_표시'],
-                hovertemplate='<b>전주 총제작량</b><br>%{x}<br>%{text}<br>%{y}개<extra></extra>'
-            ))
-            
-            fig.add_trace(go.Scatter(
-                x=prev_stats['요일_표시'],
-                y=prev_stats['신규제작량'],
-                mode='lines+markers',
-                name='전주 신규',
-                line=dict(color='#E67E22', width=2, dash='dot'),
-                marker=dict(size=6),
-                opacity=0.4,
-                text=prev_stats['날짜_표시'],
-                hovertemplate='<b>전주 신규</b><br>%{x}<br>%{text}<br>%{y}개<extra></extra>'
-            ))
-        
-        # 이번주 데이터 (진하게, 실선)
         fig.add_trace(go.Scatter(
-            x=current_stats['요일_표시'],
-            y=current_stats['총제작량'],
+            x=person_stats['월_표시'],
+            y=person_stats['총제작량'],
             mode='lines+markers',
-            name='이번주 총제작량',
-            line=dict(color='#4A90E2', width=3),
-            marker=dict(size=8),
-            text=current_stats['날짜_표시'],
-            hovertemplate='<b>이번주 총제작량</b><br>%{x}<br>%{text}<br>%{y}개<extra></extra>'
+            name='총 제작량',
+            line=dict(color='#4A90E2', width=2),
+            marker=dict(size=8)
         ))
         
         fig.add_trace(go.Scatter(
-            x=current_stats['요일_표시'],
-            y=current_stats['신규제작량'],
+            x=person_stats['월_표시'],
+            y=person_stats['신규제작량'],
             mode='lines+markers',
-            name='이번주 신규',
-            line=dict(color='#E67E22', width=3),
-            marker=dict(size=8),
-            text=current_stats['날짜_표시'],
-            hovertemplate='<b>이번주 신규</b><br>%{x}<br>%{text}<br>%{y}개<extra></extra>'
+            name='신규 제작량',
+            line=dict(color='#E67E22', width=2),
+            marker=dict(size=8)
         ))
         
         fig.update_layout(
             height=300,
-            margin=dict(l=20, r=20, t=30, b=20),
-            xaxis_title="요일",
-            yaxis_title="제작량",
-            yaxis=dict(rangemode='tozero'),  # y축 0부터 시작
+            xaxis_title="월",
+            yaxis_title="제작량 (개)",
             hovermode='x unified',
-            showlegend=True,
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1,
-                font=dict(size=10)
-            )
+            font=dict(size=12),
+            yaxis=dict(rangemode='tozero'),
+            margin=dict(l=40, r=40, t=40, b=40)
         )
         
-        return fig
+        return fig, person_stats
     
-    # 카드 렌더링 함수
-    def render_person_card(person):
+    def render_person_card(person, month_text):
         st.markdown(f"""
         <div style="
             border: 3px solid #FFE8F0;
@@ -641,6 +573,7 @@ try:
         ">
             <div style="background: #FFE8F0; padding: 15px; text-align: center;">
                 <h3 style="margin: 0; color: #2C3E50; font-weight: 600;">{person['이름']}</h3>
+                <div style="font-size: 0.9em; color: #7F8C8D; margin-top: 5px;">{month_text}</div>
             </div>
             <div style="background: #F5F7F9; padding: 20px 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: center;">
                 <div>
@@ -683,9 +616,12 @@ try:
     # 이미지 디자이너
     st.markdown("### 🎨 이미지 디자이너")
     
-    if selected_week == '전체':
-        st.info("특정 주차를 선택하면 개인별 상세 데이터가 표시됩니다.")
+    if selected_month_for_detail == '전체':
+        st.info("특정 월을 선택하면 개인별 상세 데이터가 표시됩니다.")
     else:
+        # 선택 월 텍스트 (26년 2월)
+        month_text = f"{selected_month_period.year-2000}년 {selected_month_period.month}월"
+        
         image_stats = []
         for designer in IMAGE_DESIGNERS:
             if designer in df_filtered['제작자_채움'].values:
@@ -697,28 +633,34 @@ try:
             col1, col2 = st.columns([1, 2])
             
             with col1:
-                render_person_card(person)
+                render_person_card(person, month_text)
             
             with col2:
-                # 개인 데이터 필터링
-                person_current = df_filtered[df_filtered['제작자_채움'] == person['이름']]
-                person_prev = df_prev_week[df_prev_week['제작자_채움'] == person['이름']] if len(df_prev_week) > 0 else pd.DataFrame()
+                # 개인 12개월 데이터
+                person_12months = df_12months[df_12months['제작자_채움'] == person['이름']]
                 
                 # 그래프 생성
-                fig = create_person_graph(person['이름'], person_current, person_prev)
+                fig, person_stats_table = create_person_graph(person['이름'], person_12months, selected_month_period)
                 st.plotly_chart(fig, use_container_width=True)
                 
-                # 날짜 정보 표시
-                render_date_info(person_current, person_prev)
+                # 1년 데이터 표
+                st.markdown("**📊 월별 제작량**")
+                display_table = person_stats_table[['월_표시', '총제작량', '신규제작량']].copy()
+                display_table.columns = ['월', '총 제작량', '신규 제작량']
+                display_table = display_table.sort_values('월', ascending=False)  # 최신순
+                st.dataframe(display_table, use_container_width=True, hide_index=True)
             
             st.markdown("---")
     
     # 영상 디자이너
     st.markdown("### 🎬 영상 디자이너")
     
-    if selected_week == '전체':
-        st.info("특정 주차를 선택하면 개인별 상세 데이터가 표시됩니다.")
+    if selected_month_for_detail == '전체':
+        st.info("특정 월을 선택하면 개인별 상세 데이터가 표시됩니다.")
     else:
+        # 선택 월 텍스트 (26년 2월)
+        month_text = f"{selected_month_period.year-2000}년 {selected_month_period.month}월"
+        
         video_stats = []
         for designer in VIDEO_DESIGNERS:
             if designer in df_filtered['제작자_채움'].values:
@@ -730,19 +672,22 @@ try:
             col1, col2 = st.columns([1, 2])
             
             with col1:
-                render_person_card(person)
+                render_person_card(person, month_text)
             
             with col2:
-                # 개인 데이터 필터링
-                person_current = df_filtered[df_filtered['제작자_채움'] == person['이름']]
-                person_prev = df_prev_week[df_prev_week['제작자_채움'] == person['이름']] if len(df_prev_week) > 0 else pd.DataFrame()
+                # 개인 12개월 데이터
+                person_12months = df_12months[df_12months['제작자_채움'] == person['이름']]
                 
                 # 그래프 생성
-                fig = create_person_graph(person['이름'], person_current, person_prev)
+                fig, person_stats_table = create_person_graph(person['이름'], person_12months, selected_month_period)
                 st.plotly_chart(fig, use_container_width=True)
                 
-                # 날짜 정보 표시
-                render_date_info(person_current, person_prev)
+                # 1년 데이터 표
+                st.markdown("**📊 월별 제작량**")
+                display_table = person_stats_table[['월_표시', '총제작량', '신규제작량']].copy()
+                display_table.columns = ['월', '총 제작량', '신규 제작량']
+                display_table = display_table.sort_values('월', ascending=False)  # 최신순
+                st.dataframe(display_table, use_container_width=True, hide_index=True)
             
             st.markdown("---")
 
