@@ -388,6 +388,35 @@ try:
     available_weeks = sorted(df['주차_정렬용'].unique(), reverse=True)
     week_options = ['전체'] + [str(w) for w in available_weeks]
     selected_week = st.selectbox("📅 주차 선택 (개인 상세)", options=week_options, index=1)
+    
+    # ============================================
+    # 사람별 카드 + 개인 그래프
+    # ============================================
+    st.markdown("---")
+    st.markdown("## 👥 사람별 제작 현황")
+    
+    # 필터링
+    if selected_week != '전체':
+        selected_week_period = pd.Period(selected_week, freq='W')
+        df_filtered = df[df['주차_정렬용'] == selected_week_period]
+        
+        # 전주 데이터도 가져오기
+        all_weeks = sorted(df['주차_정렬용'].unique(), reverse=True)
+        current_week_idx = all_weeks.index(selected_week_period) if selected_week_period in all_weeks else -1
+        
+        if current_week_idx >= 0 and current_week_idx < len(all_weeks) - 1:
+            prev_week_period = all_weeks[current_week_idx + 1]
+            df_prev_week = df[df['주차_정렬용'] == prev_week_period]
+        else:
+            df_prev_week = pd.DataFrame()
+    else:
+        df_filtered = df
+        df_prev_week = pd.DataFrame()
+    
+    # 사람별 통계 계산
+    def calculate_person_stats(person_name):
+        person_df = df_filtered[df_filtered['제작자_채움'] == person_name]
+        
         # 유형별 집계
         type_counts = person_df.groupby('콘텐츠유형_간소화')['콘텐츠 수'].sum().to_dict()
         
