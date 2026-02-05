@@ -123,19 +123,17 @@ try:
     
     df['신규여부'] = df['콘텐츠 유형'].str.contains('신규', case=False, na=False) | df['콘텐츠 유형'].str.contains('ai', case=False, na=False)
     
-    # 콘텐츠 유형 간소화 (상세페이지/배너 추가)
+    # 콘텐츠 유형 간소화
     def simplify_content_type(content_type):
         if pd.isna(content_type) or content_type == '':
             return '기타'
         content_type = str(content_type).lower()
-        if '상세페이지' in content_type or '상세' in content_type:
-            return '상세페이지/배너'
-        elif '신규' in content_type or '디벨롭' in content_type or 'ai' in content_type:
+        if '신규' in content_type or '디벨롭' in content_type or 'ai' in content_type:
             return '신규/디벨롭'
         elif '리사이징' in content_type:
             return '리사이징'
-        elif '베리' in content_type or '배너' in content_type:
-            return '배너'
+        elif '베리' in content_type:
+            return '베리'
         elif '지면확장' in content_type:
             return '지면확장'
         else:
@@ -212,289 +210,366 @@ try:
     # 빈 데이터프레임 생성
     full_months_df = pd.DataFrame({'월': list(all_months)})
     
-    # 이미지 데이터 병합
-    monthly_image_stats_full = pd.merge(full_months_df, monthly_image_stats, on='월', how='left').fillna(0)
-    monthly_image_stats_full = monthly_image_stats_full.sort_values('월')
+    # 안전하게 병합 - 이미지
+    monthly_image_full = pd.merge(full_months_df, monthly_image_stats, on='월', how='left')
+    monthly_image_full['총제작량'] = monthly_image_full['총제작량'].fillna(0)
+    monthly_image_full['신규제작량'] = monthly_image_full['신규제작량'].fillna(0)
+    monthly_image_full['월_표시'] = monthly_image_full['월'].apply(lambda x: f"{x.year}년 {x.month}월")
+    monthly_image_full = monthly_image_full.sort_values('월')
     
-    # 영상 데이터 병합
-    monthly_video_stats_full = pd.merge(full_months_df, monthly_video_stats, on='월', how='left').fillna(0)
-    monthly_video_stats_full = monthly_video_stats_full.sort_values('월')
+    # 안전하게 병합 - 영상
+    monthly_video_full = pd.merge(full_months_df, monthly_video_stats, on='월', how='left')
+    monthly_video_full['총제작량'] = monthly_video_full['총제작량'].fillna(0)
+    monthly_video_full['신규제작량'] = monthly_video_full['신규제작량'].fillna(0)
+    monthly_video_full['월_표시'] = monthly_video_full['월'].apply(lambda x: f"{x.year}년 {x.month}월")
+    monthly_video_full = monthly_video_full.sort_values('월')
     
-    # X축 레이블 (26년 1월 형식)
-    monthly_image_stats_full['월_표시'] = monthly_image_stats_full['월'].apply(
-        lambda x: f"{x.year-2000}년 {x.month}월"
-    )
-    monthly_video_stats_full['월_표시'] = monthly_video_stats_full['월'].apply(
-        lambda x: f"{x.year-2000}년 {x.month}월"
-    )
-    
+    # 2열로 그래프 배치
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("#### 🎨 이미지 디자이너 월별 제작량")
+        st.markdown("<h3 style='font-size: 20px; text-align: center;'>🎨 이미지 디자이너</h3>", unsafe_allow_html=True)
         
-        fig_image = go.Figure()
-        fig_image.add_trace(go.Bar(
-            x=monthly_image_stats_full['월_표시'],
-            y=monthly_image_stats_full['총제작량'],
+        fig_monthly_image = go.Figure()
+        fig_monthly_image.add_trace(go.Scatter(
+            x=monthly_image_full['월_표시'],
+            y=monthly_image_full['총제작량'],
+            mode='lines+markers',
             name='총 제작량',
-            marker_color='#5DADE2',
-            text=monthly_image_stats_full['총제작량'].apply(lambda x: f"{int(x)}"),
-            textposition='outside',
-            textfont=dict(size=12, color='#2C3E50')
+            line=dict(color='#4A90E2', width=3),
+            marker=dict(size=10)
         ))
-        
-        fig_image.add_trace(go.Bar(
-            x=monthly_image_stats_full['월_표시'],
-            y=monthly_image_stats_full['신규제작량'],
+        fig_monthly_image.add_trace(go.Scatter(
+            x=monthly_image_full['월_표시'],
+            y=monthly_image_full['신규제작량'],
+            mode='lines+markers',
             name='신규 제작량',
-            marker_color='#F39C12',
-            text=monthly_image_stats_full['신규제작량'].apply(lambda x: f"{int(x)}"),
-            textposition='outside',
-            textfont=dict(size=12, color='#2C3E50')
+            line=dict(color='#E67E22', width=3),
+            marker=dict(size=10)
         ))
-        
-        fig_image.update_layout(
-            barmode='group',
+        fig_monthly_image.update_layout(
             height=400,
-            showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            xaxis=dict(title="", tickangle=0),
-            yaxis=dict(title="제작량", rangemode='tozero'),
-            margin=dict(l=40, r=40, t=60, b=40)
+            xaxis_title="월",
+            yaxis_title="제작량 (개)",
+            hovermode='x unified',
+            font=dict(size=16),
+            xaxis=dict(title_font=dict(size=18)),
+            yaxis=dict(rangemode='tozero', title_font=dict(size=18)),
+            legend=dict(font=dict(size=14))
         )
-        
-        st.plotly_chart(fig_image, use_container_width=True)
+        st.plotly_chart(fig_monthly_image, use_container_width=True)
     
     with col2:
-        st.markdown("#### 🎬 영상 디자이너 월별 제작량")
+        st.markdown("<h3 style='font-size: 20px; text-align: center;'>🎬 영상 디자이너</h3>", unsafe_allow_html=True)
         
-        fig_video = go.Figure()
-        fig_video.add_trace(go.Bar(
-            x=monthly_video_stats_full['월_표시'],
-            y=monthly_video_stats_full['총제작량'],
+        fig_monthly_video = go.Figure()
+        fig_monthly_video.add_trace(go.Scatter(
+            x=monthly_video_full['월_표시'],
+            y=monthly_video_full['총제작량'],
+            mode='lines+markers',
             name='총 제작량',
-            marker_color='#5DADE2',
-            text=monthly_video_stats_full['총제작량'].apply(lambda x: f"{int(x)}"),
-            textposition='outside',
-            textfont=dict(size=12, color='#2C3E50')
+            line=dict(color='#4A90E2', width=3),
+            marker=dict(size=10)
         ))
-        
-        fig_video.add_trace(go.Bar(
-            x=monthly_video_stats_full['월_표시'],
-            y=monthly_video_stats_full['신규제작량'],
+        fig_monthly_video.add_trace(go.Scatter(
+            x=monthly_video_full['월_표시'],
+            y=monthly_video_full['신규제작량'],
+            mode='lines+markers',
             name='신규 제작량',
-            marker_color='#F39C12',
-            text=monthly_video_stats_full['신규제작량'].apply(lambda x: f"{int(x)}"),
-            textposition='outside',
-            textfont=dict(size=12, color='#2C3E50')
+            line=dict(color='#E67E22', width=3),
+            marker=dict(size=10)
         ))
-        
-        fig_video.update_layout(
-            barmode='group',
+        fig_monthly_video.update_layout(
             height=400,
-            showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            xaxis=dict(title="", tickangle=0),
-            yaxis=dict(title="제작량", rangemode='tozero'),
-            margin=dict(l=40, r=40, t=60, b=40)
+            xaxis_title="월",
+            yaxis_title="제작량 (개)",
+            hovermode='x unified',
+            font=dict(size=16),
+            xaxis=dict(title_font=dict(size=18)),
+            yaxis=dict(rangemode='tozero', title_font=dict(size=18)),
+            legend=dict(font=dict(size=14))
         )
-        
-        st.plotly_chart(fig_video, use_container_width=True)
+        st.plotly_chart(fig_monthly_video, use_container_width=True)
     
     st.markdown("---")
     
-    # 그래프 2: 콘텐츠 유형별 제작량
-    st.markdown("### 📊 콘텐츠 유형별 제작량")
+
+    # 그래프 2: 주차별 제작량 (선택된 월 기준)
+    # 선택된 월의 주차만 필터링
+    df_month_filtered = df[(df['날짜_변환'].dt.year == selected_year) & (df['날짜_변환'].dt.month == selected_month)]
+    df_image_month = df_image[(df_image['날짜_변환'].dt.year == selected_year) & (df_image['날짜_변환'].dt.month == selected_month)]
+    df_video_month = df_video[(df_video['날짜_변환'].dt.year == selected_year) & (df_video['날짜_변환'].dt.month == selected_month)]
     
-    # 선택된 연월의 데이터만 필터링
-    selected_period = pd.Period(f"{selected_year}-{selected_month:02d}", freq='M')
-    df_selected_month = df[df['월'] == selected_period].copy()
+    # 해당 월의 주차 목록
+    month_weeks = sorted(df_month_filtered['주차_정렬용'].unique())
     
-    # 이미지 디자이너 콘텐츠 유형별
-    df_image_month = df_selected_month[df_selected_month['제작자_채움'].isin(IMAGE_DESIGNERS)]
-    content_type_image = df_image_month.groupby('콘텐츠유형_간소화')['콘텐츠 수'].sum().reset_index()
-    content_type_image.columns = ['콘텐츠유형', '개수']
-    
-    # 영상 디자이너 콘텐츠 유형별
-    df_video_month = df_selected_month[df_selected_month['제작자_채움'].isin(VIDEO_DESIGNERS)]
-    content_type_video = df_video_month.groupby('콘텐츠유형_간소화')['콘텐츠 수'].sum().reset_index()
-    content_type_video.columns = ['콘텐츠유형', '개수']
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("#### 🎨 이미지 디자이너")
+    if len(month_weeks) > 0:
+        # 최소 5주차 표시 (없으면 0으로 채우기)
+        max_weeks = max(5, len(month_weeks))
         
-        fig_content_image = go.Figure()
-        fig_content_image.add_trace(go.Bar(
-            x=content_type_image['콘텐츠유형'],
-            y=content_type_image['개수'],
-            marker_color='#5DADE2',
-            text=content_type_image['개수'].apply(lambda x: f"{int(x)}"),
-            textposition='outside',
-            textfont=dict(size=12)
-        ))
+        # 해당 월의 몇 주차인지 계산 (1주차, 2주차, 3주차...)
+        week_labels = {}
+        for idx in range(1, max_weeks + 1):
+            if idx <= len(month_weeks):
+                week_labels[month_weeks[idx-1]] = f"{idx}주차"
         
-        fig_content_image.update_layout(
-            height=400,
-            showlegend=False,
-            xaxis=dict(title="콘텐츠 유형"),
-            yaxis=dict(title="제작량", rangemode='tozero'),
-            margin=dict(l=40, r=40, t=40, b=40)
-        )
+        # 빈 주차를 위한 전체 주차 레이블
+        all_week_labels = [f"{i}주차" for i in range(1, max_weeks + 1)]
         
-        st.plotly_chart(fig_content_image, use_container_width=True)
-    
-    with col2:
-        st.markdown("#### 🎬 영상 디자이너")
+        # 타이틀
+        current_week_idx = len(month_weeks)
+        st.markdown(f"<h2 style='text-align: center; font-size: 32px;'>{selected_month}월 {current_week_idx}주차</h2>", unsafe_allow_html=True)
         
-        fig_content_video = go.Figure()
-        fig_content_video.add_trace(go.Bar(
-            x=content_type_video['콘텐츠유형'],
-            y=content_type_video['개수'],
-            marker_color='#5DADE2',
-            text=content_type_video['개수'].apply(lambda x: f"{int(x)}"),
-            textposition='outside',
-            textfont=dict(size=12)
-        ))
+        # 이미지 디자이너 주차별 집계
+        weekly_image = df_image_month.groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
+        weekly_image.columns = ['주차', '총제작량']
         
-        fig_content_video.update_layout(
-            height=400,
-            showlegend=False,
-            xaxis=dict(title="콘텐츠 유형"),
-            yaxis=dict(title="제작량", rangemode='tozero'),
-            margin=dict(l=40, r=40, t=40, b=40)
-        )
+        weekly_image_new = df_image_month[df_image_month['신규여부'] == True].groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
+        weekly_image_new.columns = ['주차', '신규제작량']
         
-        st.plotly_chart(fig_content_video, use_container_width=True)
+        weekly_image_stats = pd.merge(weekly_image, weekly_image_new, on='주차', how='left').fillna(0)
+        
+        # 빈 주차 추가
+        full_weeks_image = pd.DataFrame({'주차_표시': all_week_labels})
+        weekly_image_stats['주차_표시'] = weekly_image_stats['주차'].map(week_labels)
+        weekly_image_stats = pd.merge(full_weeks_image, weekly_image_stats[['주차_표시', '총제작량', '신규제작량']], on='주차_표시', how='left').fillna(0)
+        
+        # 영상 디자이너 주차별 집계
+        weekly_video = df_video_month.groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
+        weekly_video.columns = ['주차', '총제작량']
+        
+        weekly_video_new = df_video_month[df_video_month['신규여부'] == True].groupby('주차_정렬용')['콘텐츠 수'].sum().reset_index()
+        weekly_video_new.columns = ['주차', '신규제작량']
+        
+        weekly_video_stats = pd.merge(weekly_video, weekly_video_new, on='주차', how='left').fillna(0)
+        
+        # 빈 주차 추가
+        full_weeks_video = pd.DataFrame({'주차_표시': all_week_labels})
+        weekly_video_stats['주차_표시'] = weekly_video_stats['주차'].map(week_labels)
+        weekly_video_stats = pd.merge(full_weeks_video, weekly_video_stats[['주차_표시', '총제작량', '신규제작량']], on='주차_표시', how='left').fillna(0)
+        
+        # 2열로 그래프 배치
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("<h3 style='font-size: 20px; text-align: center;'>🎨 이미지 디자이너</h3>", unsafe_allow_html=True)
+            
+            fig_weekly_image = go.Figure()
+            fig_weekly_image.add_trace(go.Scatter(
+                x=weekly_image_stats['주차_표시'],
+                y=weekly_image_stats['총제작량'],
+                mode='lines+markers',
+                name='총 제작량',
+                line=dict(color='#4A90E2', width=3),
+                marker=dict(size=10)
+            ))
+            fig_weekly_image.add_trace(go.Scatter(
+                x=weekly_image_stats['주차_표시'],
+                y=weekly_image_stats['신규제작량'],
+                mode='lines+markers',
+                name='신규 제작량',
+                line=dict(color='#E67E22', width=3),
+                marker=dict(size=10)
+            ))
+            fig_weekly_image.update_layout(
+                height=400,
+                xaxis_title="주차",
+                yaxis_title="제작량 (개)",
+                hovermode='x unified',
+                font=dict(size=16),
+                xaxis=dict(title_font=dict(size=18)),
+                yaxis=dict(rangemode='tozero', title_font=dict(size=18)),
+                legend=dict(font=dict(size=14))
+            )
+            st.plotly_chart(fig_weekly_image, use_container_width=True)
+        
+        with col2:
+            st.markdown("<h3 style='font-size: 20px; text-align: center;'>🎬 영상 디자이너</h3>", unsafe_allow_html=True)
+            
+            fig_weekly_video = go.Figure()
+            fig_weekly_video.add_trace(go.Scatter(
+                x=weekly_video_stats['주차_표시'],
+                y=weekly_video_stats['총제작량'],
+                mode='lines+markers',
+                name='총 제작량',
+                line=dict(color='#4A90E2', width=3),
+                marker=dict(size=10)
+            ))
+            fig_weekly_video.add_trace(go.Scatter(
+                x=weekly_video_stats['주차_표시'],
+                y=weekly_video_stats['신규제작량'],
+                mode='lines+markers',
+                name='신규 제작량',
+                line=dict(color='#E67E22', width=3),
+                marker=dict(size=10)
+            ))
+            fig_weekly_video.update_layout(
+                height=400,
+                xaxis_title="주차",
+                yaxis_title="제작량 (개)",
+                hovermode='x unified',
+                font=dict(size=16),
+                xaxis=dict(title_font=dict(size=18)),
+                yaxis=dict(rangemode='tozero', title_font=dict(size=18)),
+                legend=dict(font=dict(size=14))
+            )
+            st.plotly_chart(fig_weekly_video, use_container_width=True)
     
     st.markdown("---")
     
-    # 개인별 상세 통계
-    st.markdown("### 👤 개인별 상세 통계")
+    # 월 선택 (개인 카드용)
+    available_months_for_detail = sorted(df['월'].unique(), reverse=True)
+    month_options_dict = {f"{m.year}년 {m.month}월": m for m in available_months_for_detail}
+    month_options_display = ['전체'] + list(month_options_dict.keys())
     
-    # 월 선택 필터
-    available_months_list = sorted(df['월'].unique())
-    month_options = ['전체'] + [f"{m.year}년 {m.month}월" for m in available_months_list]
-    
-    selected_month_for_detail = st.selectbox(
-        "📅 상세 통계 조회 월 선택",
-        options=month_options,
-        index=0
+    # 기본값: 최신 월
+    selected_month_display = st.selectbox(
+        "📅 월 선택 (개인 상세)",
+        options=month_options_display,
+        index=1
     )
     
-    # 선택된 월에 해당하는 데이터 필터링
-    if selected_month_for_detail == '전체':
-        df_filtered = df.copy()
-        df_year = df.copy()
+    # 선택된 Period 가져오기
+    if selected_month_display == '전체':
+        selected_month_for_detail = '전체'
     else:
-        # "2026년 2월" → Period 객체로 변환
-        year = int(selected_month_for_detail.split('년')[0])
-        month = int(selected_month_for_detail.split('년')[1].replace('월', '').strip())
-        selected_month_period = pd.Period(f"{year}-{month:02d}", freq='M')
-        
-        df_filtered = df[df['월'] == selected_month_period].copy()
-        
-        # 해당 연도 전체 데이터 (12개월 그래프용)
-        df_year = df[df['날짜_변환'].dt.year == selected_month_period.year].copy()
+        selected_month_for_detail = month_options_dict[selected_month_display]
     
-    # 개인별 통계 계산 함수 (상세페이지/배너 추가)
-    def calculate_person_stats(person_name):
-        person_data = df_filtered[df_filtered['제작자_채움'] == person_name]
+    # ============================================
+    # 사람별 카드 + 개인 그래프
+    # ============================================
+    st.markdown("---")
+    st.markdown("## 👥 사람별 제작 현황")
+    
+    # 필터링
+    if selected_month_for_detail != '전체':
+        selected_month_period = pd.Period(selected_month_for_detail, freq='M')
+        df_filtered = df[df['월'] == selected_month_period]
         
-        # 신규/디벨롭 (신규여부=True인 것)
-        new_count = person_data[person_data['신규여부'] == True]['콘텐츠 수'].sum()
+        # 선택 월의 년도 전체 데이터
+        selected_year = selected_month_period.year
+        df_year = df[df['날짜_변환'].dt.year == selected_year]
+    else:
+        df_filtered = df
+        df_year = df
+    
+    # 사람별 통계 계산
+    def calculate_person_stats(person_name):
+        person_df = df_filtered[df_filtered['제작자_채움'] == person_name]
+        
+        # 유형별 집계
+        type_counts = person_df.groupby('콘텐츠유형_간소화')['콘텐츠 수'].sum().to_dict()
+        
+        # AI 개수 별도 계산 (원본 데이터에서)
+        ai_count = person_df[person_df['콘텐츠 유형'].str.contains('ai', case=False, na=False)]['콘텐츠 수'].sum()
+        
+        # 브랜드 목록
+        brands = person_df['브랜드명'].unique().tolist()
         
         # 총 제작량
-        total_count = person_data['콘텐츠 수'].sum()
-        
-        # 콘텐츠 유형별 (상세페이지/배너 추가)
-        banner_count = person_data[person_data['콘텐츠유형_간소화'] == '배너']['콘텐츠 수'].sum()
-        resizing_count = person_data[person_data['콘텐츠유형_간소화'] == '리사이징']['콘텐츠 수'].sum()
-        monthly_count = person_data[person_data['콘텐츠유형_간소화'] == '지면확장']['콘텐츠 수'].sum()
-        ai_count = person_data[person_data['콘텐츠 유형'].str.contains('AI', case=False, na=False)]['콘텐츠 수'].sum()
-        detail_banner_count = person_data[person_data['콘텐츠유형_간소화'] == '상세페이지/배너']['콘텐츠 수'].sum()
-        
-        # 브랜드 (해당 월에 작업한 브랜드만)
-        if '브랜드' in person_data.columns:
-            brands = person_data['브랜드'].dropna().unique()
-            brands = [b for b in brands if str(b).strip() != '']
-            brand_count = len(brands)
-            brand_list = ', '.join(brands[:5]) + (f' 외 {len(brands)-5}개' if len(brands) > 5 else '')
-        else:
-            brand_count = 0
-            brand_list = '-'
+        total = person_df['콘텐츠 수'].sum()
         
         return {
             '이름': person_name,
-            '신규': int(new_count),
-            '총제작량': int(total_count),
-            '배너': int(banner_count),
-            '리사이징': int(resizing_count),
-            '지면확장': int(monthly_count),
-            'AI': int(ai_count),
-            '상세페이지/배너': int(detail_banner_count),
-            '브랜드수': brand_count,
-            '브랜드목록': brand_list
+            '총제작량': int(total),
+            '신규': int(type_counts.get('신규/디벨롭', 0)),  # AI 포함됨
+            '베리': int(type_counts.get('베리', 0)),
+            '리사이징': int(type_counts.get('리사이징', 0)),
+            '지면확장': int(type_counts.get('지면확장', 0)),
+            'AI': int(ai_count),  # 별도 표시
+            '브랜드수': len(brands),
+            '브랜드목록': ", ".join(brands) if brands else "-"
         }
     
-    # 개인별 그래프 생성 함수 (12개월 추이)
+    # 날짜 정보 표시 함수
+    def render_date_info(person_current, person_prev):
+        if len(person_current) > 0:
+            current_dates = sorted(person_current[person_current['날짜_변환'].dt.dayofweek < 5]['날짜_변환'].unique())
+            current_dates_str = " / ".join([d.strftime('%m/%d') for d in current_dates])
+        else:
+            current_dates_str = "-"
+        
+        if len(person_prev) > 0:
+            prev_dates = sorted(person_prev[person_prev['날짜_변환'].dt.dayofweek < 5]['날짜_변환'].unique())
+            prev_dates_str = " / ".join([d.strftime('%m/%d') for d in prev_dates])
+        else:
+            prev_dates_str = "-"
+        
+        st.markdown(f"""
+        <div style="
+            background: #F8F9FA;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            color: #555;
+            margin-top: -10px;
+        ">
+            <div style="margin-bottom: 5px;">
+                <strong style="color: #E67E22;">📅 전주:</strong> {prev_dates_str}
+            </div>
+            <div>
+                <strong style="color: #4A90E2;">📅 금주:</strong> {current_dates_str}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # 개인 그래프 생성 함수 (선택 월 기준 5개월)
     def create_person_graph(person_name, person_year_data, selected_month_period):
-        # 월별 집계
+        # 선택 월 기준 이전 4개월 포함 (총 5개월)
+        selected_month_idx = selected_month_period.month
+        selected_year = selected_month_period.year
+        
+        # 5개월 범위 생성 (선택 월 포함 이전 4개월)
+        months_range = []
+        for i in range(4, -1, -1):  # 4, 3, 2, 1, 0
+            month_back = selected_month_idx - i
+            if month_back > 0:
+                months_range.append(pd.Period(f"{selected_year}-{month_back:02d}", freq='M'))
+            else:
+                # 작년으로 넘어감
+                months_range.append(pd.Period(f"{selected_year-1}-{12+month_back:02d}", freq='M'))
+        
+        # 해당 인물의 월별 데이터
         person_monthly = person_year_data.groupby('월')['콘텐츠 수'].sum().reset_index()
         person_monthly.columns = ['월', '총제작량']
         
         person_monthly_new = person_year_data[person_year_data['신규여부'] == True].groupby('월')['콘텐츠 수'].sum().reset_index()
         person_monthly_new.columns = ['월', '신규제작량']
         
-        person_monthly_stats = pd.merge(person_monthly, person_monthly_new, on='월', how='left').fillna(0)
+        person_stats = pd.merge(person_monthly, person_monthly_new, on='월', how='left').fillna(0)
         
-        # 1~12월 전체 생성
-        selected_year = selected_month_period.year
-        all_months_in_year = [pd.Period(f"{selected_year}-{m:02d}", freq='M') for m in range(1, 13)]
-        full_months_df = pd.DataFrame({'월': all_months_in_year})
-        
-        person_monthly_stats_full = pd.merge(full_months_df, person_monthly_stats, on='월', how='left').fillna(0)
-        person_monthly_stats_full = person_monthly_stats_full.sort_values('월')
-        
-        # X축 레이블
-        person_monthly_stats_full['월_표시'] = person_monthly_stats_full['월'].apply(
-            lambda x: f"{x.month}월"
-        )
+        # 5개월 템플릿 생성
+        full_months_df = pd.DataFrame({'월': months_range})
+        person_stats_full = pd.merge(full_months_df, person_stats, on='월', how='left').fillna(0)
+        person_stats_full['월_표시'] = person_stats_full['월'].apply(lambda x: f"{x.year}년 {x.month}월")
+        person_stats_full = person_stats_full.sort_values('월')
         
         # 그래프 생성
         fig = go.Figure()
         
         fig.add_trace(go.Scatter(
-            x=person_monthly_stats_full['월_표시'],
-            y=person_monthly_stats_full['총제작량'],
-            mode='lines+markers+text',
+            x=person_stats_full['월_표시'],
+            y=person_stats_full['총제작량'],
+            mode='lines+markers',
             name='총 제작량',
-            line=dict(color='#5DADE2', width=3),
-            marker=dict(size=8),
-            text=person_monthly_stats_full['총제작량'].apply(lambda x: f"{int(x)}"),
-            textposition='top center',
-            textfont=dict(size=10)
+            line=dict(color='#4A90E2', width=2),
+            marker=dict(size=8)
         ))
         
         fig.add_trace(go.Scatter(
-            x=person_monthly_stats_full['월_표시'],
-            y=person_monthly_stats_full['신규제작량'],
-            mode='lines+markers+text',
+            x=person_stats_full['월_표시'],
+            y=person_stats_full['신규제작량'],
+            mode='lines+markers',
             name='신규 제작량',
-            line=dict(color='#F39C12', width=3),
-            marker=dict(size=8),
-            text=person_monthly_stats_full['신규제작량'].apply(lambda x: f"{int(x)}"),
-            textposition='top center',
-            textfont=dict(size=10)
+            line=dict(color='#E67E22', width=2),
+            marker=dict(size=8)
         ))
         
         fig.update_layout(
             height=300,
-            showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            xaxis=dict(title=""),
+            xaxis_title="월",
+            yaxis_title="제작량 (개)",
+            hovermode='x unified',
             font=dict(size=12),
             yaxis=dict(rangemode='tozero'),
             margin=dict(l=40, r=40, t=40, b=40)
@@ -536,10 +611,10 @@ try:
                     <div style="font-size: 2.5em; font-weight: bold; color: #2C3E50; line-height: 1;">{person['총제작량']}</div>
                 </div>
             </div>
-            <div style="padding: 15px; background: #FAFBFC; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+            <div style="padding: 15px; background: #FAFBFC; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div style="background: white; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
-                    <div style="font-size: 1.5em; font-weight: bold; color: #5DADE2;">{person['배너']}</div>
-                    <div style="font-size: 0.8em; color: #95A5A6;">배너</div>
+                    <div style="font-size: 1.5em; font-weight: bold; color: #5DADE2;">{person['베리']}</div>
+                    <div style="font-size: 0.8em; color: #95A5A6;">베리</div>
                 </div>
                 <div style="background: white; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
                     <div style="font-size: 1.5em; font-weight: bold; color: #5DADE2;">{person['리사이징']}</div>
@@ -552,10 +627,6 @@ try:
                 <div style="background: white; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
                     <div style="font-size: 1.5em; font-weight: bold; color: #5DADE2;">{person['AI']}</div>
                     <div style="font-size: 0.8em; color: #95A5A6;">AI</div>
-                </div>
-                <div style="background: white; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED; grid-column: span 2;">
-                    <div style="font-size: 1.5em; font-weight: bold; color: #5DADE2;">{person['상세페이지/배너']}</div>
-                    <div style="font-size: 0.8em; color: #95A5A6;">상세페이지/배너</div>
                 </div>
             </div>
             <div style="background: linear-gradient(135deg, #D4F1F4 0%, #FFE8F5 100%); padding: 15px; text-align: center;">
