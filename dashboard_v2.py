@@ -208,23 +208,21 @@ try:
         all_months = pd.period_range(start=start_month, end=df['날짜_변환'].max(), freq='M')
     
     # 빈 데이터프레임 생성
-    full_months = pd.DataFrame({'월': all_months})
+    full_months_df = pd.DataFrame({'월': list(all_months)})
     
-    # 병합 (빈 월은 0으로)
-    monthly_image_stats = pd.merge(full_months, monthly_image_stats, on='월', how='left').fillna(0)
-    monthly_video_stats = pd.merge(full_months, monthly_video_stats, on='월', how='left').fillna(0)
+    # 안전하게 병합 - 이미지
+    monthly_image_full = pd.merge(full_months_df, monthly_image_stats, on='월', how='left')
+    monthly_image_full['총제작량'] = monthly_image_full['총제작량'].fillna(0)
+    monthly_image_full['신규제작량'] = monthly_image_full['신규제작량'].fillna(0)
+    monthly_image_full['월_표시'] = monthly_image_full['월'].apply(lambda x: f"{x.year}년 {x.month}월")
+    monthly_image_full = monthly_image_full.sort_values('월')
     
-    # 월 표시 포맷: 2026년 1월
-    monthly_image_stats['월_표시'] = monthly_image_stats['월'].apply(lambda x: f"{x.year}년 {x.month}월")
-    monthly_image_stats = monthly_image_stats.sort_values('월')
-    
-    monthly_video_stats['월_표시'] = monthly_video_stats['월'].apply(lambda x: f"{x.year}년 {x.month}월")
-    monthly_video_stats = monthly_video_stats.sort_values('월')
-    
-    monthly_video_new = df_video[df_video['신규여부'] == True].groupby('월')['콘텐츠 수'].sum().reset_index()
-    monthly_video_new.columns = ['월', '신규제작량']
-    
-    monthly_video_stats = pd.merge(monthly_video, monthly_video_new, on='월', how='left').fillna(0)
+    # 안전하게 병합 - 영상
+    monthly_video_full = pd.merge(full_months_df, monthly_video_stats, on='월', how='left')
+    monthly_video_full['총제작량'] = monthly_video_full['총제작량'].fillna(0)
+    monthly_video_full['신규제작량'] = monthly_video_full['신규제작량'].fillna(0)
+    monthly_video_full['월_표시'] = monthly_video_full['월'].apply(lambda x: f"{x.year}년 {x.month}월")
+    monthly_video_full = monthly_video_full.sort_values('월')
     
     # 2열로 그래프 배치
     col1, col2 = st.columns(2)
@@ -234,16 +232,16 @@ try:
         
         fig_monthly_image = go.Figure()
         fig_monthly_image.add_trace(go.Scatter(
-            x=monthly_image_stats['월_표시'],
-            y=monthly_image_stats['총제작량'],
+            x=monthly_image_full['월_표시'],
+            y=monthly_image_full['총제작량'],
             mode='lines+markers',
             name='총 제작량',
             line=dict(color='#4A90E2', width=3),
             marker=dict(size=10)
         ))
         fig_monthly_image.add_trace(go.Scatter(
-            x=monthly_image_stats['월_표시'],
-            y=monthly_image_stats['신규제작량'],
+            x=monthly_image_full['월_표시'],
+            y=monthly_image_full['신규제작량'],
             mode='lines+markers',
             name='신규 제작량',
             line=dict(color='#E67E22', width=3),
@@ -266,16 +264,16 @@ try:
         
         fig_monthly_video = go.Figure()
         fig_monthly_video.add_trace(go.Scatter(
-            x=monthly_video_stats['월_표시'],
-            y=monthly_video_stats['총제작량'],
+            x=monthly_video_full['월_표시'],
+            y=monthly_video_full['총제작량'],
             mode='lines+markers',
             name='총 제작량',
             line=dict(color='#4A90E2', width=3),
             marker=dict(size=10)
         ))
         fig_monthly_video.add_trace(go.Scatter(
-            x=monthly_video_stats['월_표시'],
-            y=monthly_video_stats['신규제작량'],
+            x=monthly_video_full['월_표시'],
+            y=monthly_video_full['신규제작량'],
             mode='lines+markers',
             name='신규 제작량',
             line=dict(color='#E67E22', width=3),
