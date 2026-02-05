@@ -327,10 +327,6 @@ try:
     week_options = ['전체'] + [str(w) for w in available_weeks]
     selected_week = st.selectbox("📅 주차 선택 (개인 상세)", options=week_options, index=1)
     
-        )
-        
-        st.plotly_chart(fig_daily, use_container_width=True)
-    
     # ============================================
     # 사람별 카드 + 개인 그래프
     # ============================================
