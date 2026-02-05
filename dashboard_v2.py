@@ -47,15 +47,18 @@ try:
     df = pd.DataFrame(data)
     
     # 데이터 전처리
+    # 날짜가 실제로 있는 행만 선택 (빈칸, 헤더 제외)
     df = df[df['날짜'].notna()]
-    df = df[df['날짜'] != '날짜']
     df = df[df['날짜'] != '']
+    df = df[df['날짜'] != '날짜']
     
+    # 날짜 변환 (에러 무시)
     df['날짜_변환'] = pd.to_datetime(
         df['날짜'].astype(str).str.replace(' ', '').str.replace('.', '-'), 
         errors='coerce'
     )
     
+    # 날짜 변환 실패한 행 제거
     df = df[df['날짜_변환'].notna()].copy()
     
     df['제작자_채움'] = df['제작자'].replace('', None)
