@@ -39,7 +39,8 @@ try:
     client = gspread.authorize(credentials)
     
     sheet = client.open_by_url(sheet_url)
-    worksheet = sheet.worksheet('3팀')  # '3팀' 탭 읽기
+    # 임시: 첫 번째 탭 읽기 (탭 이름 확인 후 수정 필요)
+    worksheet = sheet.get_worksheet(0)
     
     data = worksheet.get_all_records()
     df = pd.DataFrame(data)
@@ -99,7 +100,7 @@ try:
     # 주차 선택
     available_weeks = sorted(df['주차_정렬용'].unique(), reverse=True)
     week_options = ['전체'] + [str(w) for w in available_weeks]
-    selected_week = st.selectbox("📅 주차 선택", options=week_options, index=0)
+    selected_week = st.selectbox("📅 주차 선택", options=week_options, index=1)  # index=1: 최신 주차
     
     # 그래프 1: 주차별 그래프 (최근 5주) - 위
     st.markdown("### 📊 주차별 제작량 (최근 5주)")
