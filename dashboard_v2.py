@@ -39,7 +39,7 @@ try:
     client = gspread.authorize(credentials)
     
     sheet = client.open_by_url(sheet_url)
-    worksheet = sheet.get_worksheet(0)
+    worksheet = sheet.worksheet('3팀')  # '3팀' 탭 읽기
     
     data = worksheet.get_all_records()
     df = pd.DataFrame(data)
