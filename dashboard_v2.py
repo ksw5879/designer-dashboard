@@ -201,14 +201,23 @@ try:
     monthly_video_stats = pd.merge(monthly_video, monthly_video_new, on='월', how='left').fillna(0)
     
     # 최소 5개월 표시를 위해 빈 월 추가
-    all_months = pd.period_range(start=df['날짜_변환'].min(), end=df['날짜_변환'].max(), freq='M')
-    # 최근 5개월 포함하도록
-    if len(all_months) < 5:
-        start_month = df['날짜_변환'].max() - pd.DateOffset(months=4)
-        all_months = pd.period_range(start=start_month, end=df['날짜_변환'].max(), freq='M')
+    # 선택된 월을 기준으로 이전 4개월 + 선택 월 = 5개월 표시
+    selected_period = pd.Period(f"{selected_year}-{selected_month:02d}", freq='M')
+    
+    # 선택 월 기준 이전 4개월 생성
+    months_to_show = []
+    for i in range(4, -1, -1):  # 4, 3, 2, 1, 0
+        month_back = selected_month - i
+        year_adjusted = selected_year
+        
+        if month_back <= 0:
+            month_back += 12
+            year_adjusted -= 1
+        
+        months_to_show.append(pd.Period(f"{year_adjusted}-{month_back:02d}", freq='M'))
     
     # 빈 데이터프레임 생성
-    full_months_df = pd.DataFrame({'월': list(all_months)})
+    full_months_df = pd.DataFrame({'월': months_to_show})
     
     # 안전하게 병합 - 이미지
     monthly_image_full = pd.merge(full_months_df, monthly_image_stats, on='월', how='left')
