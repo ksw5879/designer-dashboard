@@ -128,7 +128,7 @@ try:
         if pd.isna(content_type) or content_type == '':
             return '기타'
         content_type = str(content_type).lower()
-        if '신규' in content_type or '디벨롭' in content_type or 'ai' in content_type:
+        if '신규' in content_type or '디벨롭' in content_type or 'ai' in content_type or '상세페이지' in content_type or '상세' in content_type:
             return '신규/디벨롭'
         elif '리사이징' in content_type:
             return '리사이징'
@@ -463,6 +463,9 @@ try:
         # AI 개수 별도 계산 (원본 데이터에서)
         ai_count = person_df[person_df['콘텐츠 유형'].str.contains('ai', case=False, na=False)]['콘텐츠 수'].sum()
         
+        # 상세페이지/배너 개수 별도 계산
+        detail_banner_count = person_df[person_df['콘텐츠 유형'].str.contains('상세페이지|상세', case=False, na=False, regex=True)]['콘텐츠 수'].sum()
+        
         # 브랜드 목록 (선택된 월에 진행한 브랜드만)
         # 컬럼명이 '브랜드', '브랜드명' 등 다양할 수 있으므로 확인
         brand_column = None
@@ -483,11 +486,12 @@ try:
         return {
             '이름': person_name,
             '총제작량': int(total),
-            '신규': int(type_counts.get('신규/디벨롭', 0)),  # AI 포함됨
+            '신규': int(type_counts.get('신규/디벨롭', 0)),  # AI, 상세페이지/배너 포함됨
             '베리': int(type_counts.get('베리', 0)),
             '리사이징': int(type_counts.get('리사이징', 0)),
             '지면확장': int(type_counts.get('지면확장', 0)),
             'AI': int(ai_count),  # 별도 표시
+            '상세페이지/배너': int(detail_banner_count),  # 별도 표시
             '브랜드수': len(brands),
             '브랜드목록': ", ".join(brands) if brands else "-"
         }
@@ -622,7 +626,7 @@ try:
                     <div style="font-size: 2.5em; font-weight: bold; color: #2C3E50; line-height: 1;">{person['총제작량']}</div>
                 </div>
             </div>
-            <div style="padding: 15px; background: #FAFBFC; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div style="padding: 15px; background: #FAFBFC; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
                 <div style="background: white; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
                     <div style="font-size: 1.5em; font-weight: bold; color: #5DADE2;">{person['베리']}</div>
                     <div style="font-size: 0.8em; color: #95A5A6;">베리</div>
@@ -638,6 +642,10 @@ try:
                 <div style="background: white; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED;">
                     <div style="font-size: 1.5em; font-weight: bold; color: #5DADE2;">{person['AI']}</div>
                     <div style="font-size: 0.8em; color: #95A5A6;">AI</div>
+                </div>
+                <div style="background: white; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #E1E8ED; grid-column: span 2;">
+                    <div style="font-size: 1.5em; font-weight: bold; color: #5DADE2;">{person['상세페이지/배너']}</div>
+                    <div style="font-size: 0.8em; color: #95A5A6;">상세페이지/배너</div>
                 </div>
             </div>
             <div style="background: linear-gradient(135deg, #D4F1F4 0%, #FFE8F5 100%); padding: 15px; text-align: center;">
