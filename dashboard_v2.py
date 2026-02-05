@@ -46,6 +46,17 @@ try:
     data = worksheet.get_all_records(expected_headers=[])
     df = pd.DataFrame(data)
     
+    # 디버그: 컬럼명 확인
+    st.write("📋 시트 컬럼명:", df.columns.tolist())
+    
+    # 컬럼명 정리 (공백 제거)
+    df.columns = df.columns.str.strip()
+    
+    # 날짜 컬럼 확인
+    if '날짜' not in df.columns:
+        st.error(f"❌ '날짜' 컬럼을 찾을 수 없습니다. 현재 컬럼: {df.columns.tolist()}")
+        st.stop()
+    
     # 데이터 전처리
     # 날짜가 실제로 있는 행만 선택 (빈칸, 헤더 제외)
     df = df[df['날짜'].notna()]
