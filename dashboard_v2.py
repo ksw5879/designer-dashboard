@@ -672,24 +672,36 @@ try:
                 # 년도 데이터 표 (가로 레이아웃)
                 st.markdown("**📊 월별 제작량**")
                 
-                # 행을 열로 전환 (Transpose)
-                if len(person_year_stats) > 0:
-                    # 월 추출
-                    months_list = person_year_stats['월'].apply(lambda x: f"{x.month}월").tolist()
-                    total_list = person_year_stats['총제작량'].astype(int).tolist()
-                    new_list = person_year_stats['신규제작량'].astype(int).tolist()
-                    
-                    # 가로 테이블 생성
-                    table_data = {
-                        '': ['총 제작량', '신규 제작량']
+                # 1~12월 전체 템플릿 생성
+                selected_year = selected_month_period.year
+                all_months_in_year = [pd.Period(f"{selected_year}-{m:02d}", freq='M') for m in range(1, 13)]
+                
+                # 데이터가 있는 월만 추출
+                year_stats_dict = {}
+                for _, row in person_year_stats.iterrows():
+                    month = row['월']
+                    year_stats_dict[month] = {
+                        '총제작량': int(row['총제작량']),
+                        '신규제작량': int(row['신규제작량'])
                     }
-                    for i, month in enumerate(months_list):
-                        table_data[month] = [total_list[i], new_list[i]]
-                    
-                    table_df = pd.DataFrame(table_data)
-                    st.dataframe(table_df, use_container_width=True, hide_index=True)
-                else:
-                    st.info("해당 년도에 데이터가 없습니다.")
+                
+                # 가로 테이블 생성 (1~12월)
+                table_data = {
+                    '': ['총 제작량', '신규 제작량']
+                }
+                
+                for month_period in all_months_in_year:
+                    month_label = f"{month_period.month}월"
+                    if month_period in year_stats_dict:
+                        table_data[month_label] = [
+                            year_stats_dict[month_period]['총제작량'],
+                            year_stats_dict[month_period]['신규제작량']
+                        ]
+                    else:
+                        table_data[month_label] = [0, 0]
+                
+                table_df = pd.DataFrame(table_data)
+                st.dataframe(table_df, use_container_width=True, hide_index=True)
             
             st.markdown("---")
     
@@ -726,24 +738,36 @@ try:
                 # 년도 데이터 표 (가로 레이아웃)
                 st.markdown("**📊 월별 제작량**")
                 
-                # 행을 열로 전환 (Transpose)
-                if len(person_year_stats) > 0:
-                    # 월 추출
-                    months_list = person_year_stats['월'].apply(lambda x: f"{x.month}월").tolist()
-                    total_list = person_year_stats['총제작량'].astype(int).tolist()
-                    new_list = person_year_stats['신규제작량'].astype(int).tolist()
-                    
-                    # 가로 테이블 생성
-                    table_data = {
-                        '': ['총 제작량', '신규 제작량']
+                # 1~12월 전체 템플릿 생성
+                selected_year = selected_month_period.year
+                all_months_in_year = [pd.Period(f"{selected_year}-{m:02d}", freq='M') for m in range(1, 13)]
+                
+                # 데이터가 있는 월만 추출
+                year_stats_dict = {}
+                for _, row in person_year_stats.iterrows():
+                    month = row['월']
+                    year_stats_dict[month] = {
+                        '총제작량': int(row['총제작량']),
+                        '신규제작량': int(row['신규제작량'])
                     }
-                    for i, month in enumerate(months_list):
-                        table_data[month] = [total_list[i], new_list[i]]
-                    
-                    table_df = pd.DataFrame(table_data)
-                    st.dataframe(table_df, use_container_width=True, hide_index=True)
-                else:
-                    st.info("해당 년도에 데이터가 없습니다.")
+                
+                # 가로 테이블 생성 (1~12월)
+                table_data = {
+                    '': ['총 제작량', '신규 제작량']
+                }
+                
+                for month_period in all_months_in_year:
+                    month_label = f"{month_period.month}월"
+                    if month_period in year_stats_dict:
+                        table_data[month_label] = [
+                            year_stats_dict[month_period]['총제작량'],
+                            year_stats_dict[month_period]['신규제작량']
+                        ]
+                    else:
+                        table_data[month_label] = [0, 0]
+                
+                table_df = pd.DataFrame(table_data)
+                st.dataframe(table_df, use_container_width=True, hide_index=True)
             
             st.markdown("---")
 
