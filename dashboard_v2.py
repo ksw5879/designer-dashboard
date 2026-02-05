@@ -446,20 +446,12 @@ try:
         selected_month_period = pd.Period(selected_month_for_detail, freq='M')
         df_filtered = df[df['월'] == selected_month_period]
         
-        # 이전 11개월 데이터 (총 12개월)
-        all_months = sorted(df['월'].unique(), reverse=True)
-        current_month_idx = all_months.index(selected_month_period) if selected_month_period in all_months else -1
-        
-        # 선택 월 포함 이전 12개월
-        if current_month_idx >= 0:
-            last_12_months = all_months[current_month_idx:min(current_month_idx + 12, len(all_months))]
-        else:
-            last_12_months = all_months[:12]
-        
-        df_12months = df[df['월'].isin(last_12_months)]
+        # 선택 월의 년도 전체 데이터
+        selected_year = selected_month_period.year
+        df_year = df[df['날짜_변환'].dt.year == selected_year]
     else:
         df_filtered = df
-        df_12months = df
+        df_year = df
     
     # 사람별 통계 계산
     def calculate_person_stats(person_name):
@@ -521,26 +513,43 @@ try:
         </div>
         """, unsafe_allow_html=True)
     
-    # 개인 그래프 생성 함수
-    # 개인 그래프 생성 함수 (12개월 월별)
-    def create_person_graph(person_name, person_12months_data, selected_month_period):
-        # 해당 인물의 12개월 데이터
-        person_monthly = person_12months_data.groupby('월')['콘텐츠 수'].sum().reset_index()
+    # 개인 그래프 생성 함수 (선택 월 기준 5개월)
+    def create_person_graph(person_name, person_year_data, selected_month_period):
+        # 선택 월 기준 이전 4개월 포함 (총 5개월)
+        selected_month_idx = selected_month_period.month
+        selected_year = selected_month_period.year
+        
+        # 5개월 범위 생성 (선택 월 포함 이전 4개월)
+        months_range = []
+        for i in range(4, -1, -1):  # 4, 3, 2, 1, 0
+            month_back = selected_month_idx - i
+            if month_back > 0:
+                months_range.append(pd.Period(f"{selected_year}-{month_back:02d}", freq='M'))
+            else:
+                # 작년으로 넘어감
+                months_range.append(pd.Period(f"{selected_year-1}-{12+month_back:02d}", freq='M'))
+        
+        # 해당 인물의 월별 데이터
+        person_monthly = person_year_data.groupby('월')['콘텐츠 수'].sum().reset_index()
         person_monthly.columns = ['월', '총제작량']
         
-        person_monthly_new = person_12months_data[person_12months_data['신규여부'] == True].groupby('월')['콘텐츠 수'].sum().reset_index()
+        person_monthly_new = person_year_data[person_year_data['신규여부'] == True].groupby('월')['콘텐츠 수'].sum().reset_index()
         person_monthly_new.columns = ['월', '신규제작량']
         
         person_stats = pd.merge(person_monthly, person_monthly_new, on='월', how='left').fillna(0)
-        person_stats['월_표시'] = person_stats['월'].apply(lambda x: f"{x.year}년 {x.month}월")
-        person_stats = person_stats.sort_values('월')
+        
+        # 5개월 템플릿 생성
+        full_months_df = pd.DataFrame({'월': months_range})
+        person_stats_full = pd.merge(full_months_df, person_stats, on='월', how='left').fillna(0)
+        person_stats_full['월_표시'] = person_stats_full['월'].apply(lambda x: f"{x.year}년 {x.month}월")
+        person_stats_full = person_stats_full.sort_values('월')
         
         # 그래프 생성
         fig = go.Figure()
         
         fig.add_trace(go.Scatter(
-            x=person_stats['월_표시'],
-            y=person_stats['총제작량'],
+            x=person_stats_full['월_표시'],
+            y=person_stats_full['총제작량'],
             mode='lines+markers',
             name='총 제작량',
             line=dict(color='#4A90E2', width=2),
@@ -548,8 +557,8 @@ try:
         ))
         
         fig.add_trace(go.Scatter(
-            x=person_stats['월_표시'],
-            y=person_stats['신규제작량'],
+            x=person_stats_full['월_표시'],
+            y=person_stats_full['신규제작량'],
             mode='lines+markers',
             name='신규 제작량',
             line=dict(color='#E67E22', width=2),
@@ -566,7 +575,18 @@ try:
             margin=dict(l=40, r=40, t=40, b=40)
         )
         
-        return fig, person_stats
+        # 선택 년도 전체 데이터 (표용)
+        year_stats = person_year_data.groupby('월')['콘텐츠 수'].sum().reset_index()
+        year_stats.columns = ['월', '총제작량']
+        
+        year_stats_new = person_year_data[person_year_data['신규여부'] == True].groupby('월')['콘텐츠 수'].sum().reset_index()
+        year_stats_new.columns = ['월', '신규제작량']
+        
+        year_stats = pd.merge(year_stats, year_stats_new, on='월', how='left').fillna(0)
+        year_stats = year_stats.sort_values('월')
+        
+        return fig, year_stats
+    
     
     def render_person_card(person, month_text):
         st.markdown(f"""
@@ -643,18 +663,33 @@ try:
             
             with col2:
                 # 개인 12개월 데이터
-                person_12months = df_12months[df_12months['제작자_채움'] == person['이름']]
+                person_year = df_year[df_12months['제작자_채움'] == person['이름']]
                 
                 # 그래프 생성
-                fig, person_stats_table = create_person_graph(person['이름'], person_12months, selected_month_period)
+                fig, person_stats_table = create_person_graph(person['이름'], person_year, selected_month_period)
                 st.plotly_chart(fig, use_container_width=True)
                 
-                # 1년 데이터 표
+                # 년도 데이터 표 (가로 레이아웃)
                 st.markdown("**📊 월별 제작량**")
-                display_table = person_stats_table[['월_표시', '총제작량', '신규제작량']].copy()
-                display_table.columns = ['월', '총 제작량', '신규 제작량']
-                display_table = display_table.sort_values('월', ascending=False)  # 최신순
-                st.dataframe(display_table, use_container_width=True, hide_index=True)
+                
+                # 행을 열로 전환 (Transpose)
+                if len(person_year_stats) > 0:
+                    # 월 추출
+                    months_list = person_year_stats['월'].apply(lambda x: f"{x.month}월").tolist()
+                    total_list = person_year_stats['총제작량'].astype(int).tolist()
+                    new_list = person_year_stats['신규제작량'].astype(int).tolist()
+                    
+                    # 가로 테이블 생성
+                    table_data = {
+                        '': ['총 제작량', '신규 제작량']
+                    }
+                    for i, month in enumerate(months_list):
+                        table_data[month] = [total_list[i], new_list[i]]
+                    
+                    table_df = pd.DataFrame(table_data)
+                    st.dataframe(table_df, use_container_width=True, hide_index=True)
+                else:
+                    st.info("해당 년도에 데이터가 없습니다.")
             
             st.markdown("---")
     
@@ -682,18 +717,33 @@ try:
             
             with col2:
                 # 개인 12개월 데이터
-                person_12months = df_12months[df_12months['제작자_채움'] == person['이름']]
+                person_year = df_year[df_12months['제작자_채움'] == person['이름']]
                 
                 # 그래프 생성
-                fig, person_stats_table = create_person_graph(person['이름'], person_12months, selected_month_period)
+                fig, person_stats_table = create_person_graph(person['이름'], person_year, selected_month_period)
                 st.plotly_chart(fig, use_container_width=True)
                 
-                # 1년 데이터 표
+                # 년도 데이터 표 (가로 레이아웃)
                 st.markdown("**📊 월별 제작량**")
-                display_table = person_stats_table[['월_표시', '총제작량', '신규제작량']].copy()
-                display_table.columns = ['월', '총 제작량', '신규 제작량']
-                display_table = display_table.sort_values('월', ascending=False)  # 최신순
-                st.dataframe(display_table, use_container_width=True, hide_index=True)
+                
+                # 행을 열로 전환 (Transpose)
+                if len(person_year_stats) > 0:
+                    # 월 추출
+                    months_list = person_year_stats['월'].apply(lambda x: f"{x.month}월").tolist()
+                    total_list = person_year_stats['총제작량'].astype(int).tolist()
+                    new_list = person_year_stats['신규제작량'].astype(int).tolist()
+                    
+                    # 가로 테이블 생성
+                    table_data = {
+                        '': ['총 제작량', '신규 제작량']
+                    }
+                    for i, month in enumerate(months_list):
+                        table_data[month] = [total_list[i], new_list[i]]
+                    
+                    table_df = pd.DataFrame(table_data)
+                    st.dataframe(table_df, use_container_width=True, hide_index=True)
+                else:
+                    st.info("해당 년도에 데이터가 없습니다.")
             
             st.markdown("---")
 
