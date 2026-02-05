@@ -729,6 +729,51 @@ try:
                 
                 table_df = pd.DataFrame(table_data)
                 st.dataframe(table_df, use_container_width=True, hide_index=True)
+                
+                # 브랜드별 월별 제작량 추가
+                st.markdown("**📊 브랜드별 제작량**")
+                
+                # 선택된 월에 작업한 브랜드 목록 가져오기
+                person_month_data = df_filtered[df_filtered['제작자_채움'] == person['이름']]
+                
+                # 브랜드 컬럼 찾기
+                brand_column = None
+                for col in ['브랜드', '브랜드명', 'Brand', 'brand']:
+                    if col in person_month_data.columns:
+                        brand_column = col
+                        break
+                
+                if brand_column and len(person_month_data) > 0:
+                    # 선택된 월에 작업한 브랜드 목록
+                    brands_in_month = person_month_data[brand_column].dropna().unique().tolist()
+                    brands_in_month = [b for b in brands_in_month if str(b).strip() != '']
+                    
+                    if len(brands_in_month) > 0:
+                        # 각 브랜드별 월별 제작량 계산
+                        brand_table_data = {'': []}
+                        
+                        # 브랜드명을 첫 번째 컬럼에 추가
+                        for brand in brands_in_month:
+                            brand_table_data[''].append(brand)
+                        
+                        # 각 월별로 브랜드 제작량 계산
+                        for month_period in all_months_in_year:
+                            month_label = f"{month_period.month}월"
+                            brand_table_data[month_label] = []
+                            
+                            # 해당 월 데이터 필터링
+                            month_data = person_year[person_year['월'] == month_period]
+                            
+                            for brand in brands_in_month:
+                                brand_count = month_data[month_data[brand_column] == brand]['콘텐츠 수'].sum()
+                                brand_table_data[month_label].append(int(brand_count))
+                        
+                        brand_df = pd.DataFrame(brand_table_data)
+                        st.dataframe(brand_df, use_container_width=True, hide_index=True)
+                    else:
+                        st.info("선택한 월에 작업한 브랜드가 없습니다.")
+                else:
+                    st.info("브랜드 정보가 없습니다.")
             
             st.markdown("---")
     
@@ -795,6 +840,51 @@ try:
                 
                 table_df = pd.DataFrame(table_data)
                 st.dataframe(table_df, use_container_width=True, hide_index=True)
+                
+                # 브랜드별 월별 제작량 추가
+                st.markdown("**📊 브랜드별 제작량**")
+                
+                # 선택된 월에 작업한 브랜드 목록 가져오기
+                person_month_data = df_filtered[df_filtered['제작자_채움'] == person['이름']]
+                
+                # 브랜드 컬럼 찾기
+                brand_column = None
+                for col in ['브랜드', '브랜드명', 'Brand', 'brand']:
+                    if col in person_month_data.columns:
+                        brand_column = col
+                        break
+                
+                if brand_column and len(person_month_data) > 0:
+                    # 선택된 월에 작업한 브랜드 목록
+                    brands_in_month = person_month_data[brand_column].dropna().unique().tolist()
+                    brands_in_month = [b for b in brands_in_month if str(b).strip() != '']
+                    
+                    if len(brands_in_month) > 0:
+                        # 각 브랜드별 월별 제작량 계산
+                        brand_table_data = {'': []}
+                        
+                        # 브랜드명을 첫 번째 컬럼에 추가
+                        for brand in brands_in_month:
+                            brand_table_data[''].append(brand)
+                        
+                        # 각 월별로 브랜드 제작량 계산
+                        for month_period in all_months_in_year:
+                            month_label = f"{month_period.month}월"
+                            brand_table_data[month_label] = []
+                            
+                            # 해당 월 데이터 필터링
+                            month_data = person_year[person_year['월'] == month_period]
+                            
+                            for brand in brands_in_month:
+                                brand_count = month_data[month_data[brand_column] == brand]['콘텐츠 수'].sum()
+                                brand_table_data[month_label].append(int(brand_count))
+                        
+                        brand_df = pd.DataFrame(brand_table_data)
+                        st.dataframe(brand_df, use_container_width=True, hide_index=True)
+                    else:
+                        st.info("선택한 월에 작업한 브랜드가 없습니다.")
+                else:
+                    st.info("브랜드 정보가 없습니다.")
             
             st.markdown("---")
 
