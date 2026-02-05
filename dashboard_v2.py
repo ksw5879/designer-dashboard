@@ -389,7 +389,7 @@ try:
             yaxis=dict(rangemode='tozero', title_font=dict(size=18)),
             legend=dict(font=dict(size=14))
         )
-        st.plotly_chart(fig_weekly_image, use_container_width=True)
+        st.plotly_chart(fig_weekly_image, use_container_width=True, key='weekly_image_chart')
     
     with col2:
         st.markdown("<h3 style='font-size: 20px; text-align: center;'>🎬 영상 디자이너</h3>", unsafe_allow_html=True)
@@ -421,7 +421,7 @@ try:
             yaxis=dict(rangemode='tozero', title_font=dict(size=18)),
             legend=dict(font=dict(size=14))
         )
-        st.plotly_chart(fig_weekly_video, use_container_width=True)
+        st.plotly_chart(fig_weekly_video, use_container_width=True, key='weekly_video_chart')
     
     st.markdown("---")
     
