@@ -561,4 +561,9 @@ try:
 except Exception as e:
     st.error("❌ 데이터를 불러올 수 없습니다.")
     st.error(f"오류: {str(e)}")
+    
+    # 디버그 정보
+    import traceback
+    st.code(traceback.format_exc())
+    
     st.info("관리자에게 문의하세요.")
