@@ -185,7 +185,8 @@ try:
     # 이미지 디자이너 데이터
     monthly_image = df_image.groupby('월')['콘텐츠 수'].sum().reset_index()
     monthly_image.columns = ['월', '총제작량']
-    monthly_image['월_표시'] = monthly_image['월'].astype(str)
+    # 월 표시 포맷: 2026년 1월
+    monthly_image['월_표시'] = monthly_image['월'].apply(lambda x: f"{x.year}년 {x.month}월")
     monthly_image = monthly_image.sort_values('월')
     
     monthly_image_new = df_image[df_image['신규여부'] == True].groupby('월')['콘텐츠 수'].sum().reset_index()
@@ -196,7 +197,8 @@ try:
     # 영상 디자이너 데이터
     monthly_video = df_video.groupby('월')['콘텐츠 수'].sum().reset_index()
     monthly_video.columns = ['월', '총제작량']
-    monthly_video['월_표시'] = monthly_video['월'].astype(str)
+    # 월 표시 포맷: 2026년 1월
+    monthly_video['월_표시'] = monthly_video['월'].apply(lambda x: f"{x.year}년 {x.month}월")
     monthly_video = monthly_video.sort_values('월')
     
     monthly_video_new = df_video[df_video['신규여부'] == True].groupby('월')['콘텐츠 수'].sum().reset_index()
@@ -232,10 +234,10 @@ try:
             xaxis_title="월",
             yaxis_title="제작량 (개)",
             hovermode='x unified',
-            font=dict(size=14),
-            xaxis=dict(title_font=dict(size=16)),
-            yaxis=dict(rangemode='tozero', title_font=dict(size=16)),
-            legend=dict(font=dict(size=12))
+            font=dict(size=16),
+            xaxis=dict(title_font=dict(size=18)),
+            yaxis=dict(rangemode='tozero', title_font=dict(size=18)),
+            legend=dict(font=dict(size=14))
         )
         st.plotly_chart(fig_monthly_image, use_container_width=True)
     
@@ -264,10 +266,10 @@ try:
             xaxis_title="월",
             yaxis_title="제작량 (개)",
             hovermode='x unified',
-            font=dict(size=14),
-            xaxis=dict(title_font=dict(size=16)),
-            yaxis=dict(rangemode='tozero', title_font=dict(size=16)),
-            legend=dict(font=dict(size=12))
+            font=dict(size=16),
+            xaxis=dict(title_font=dict(size=18)),
+            yaxis=dict(rangemode='tozero', title_font=dict(size=18)),
+            legend=dict(font=dict(size=14))
         )
         st.plotly_chart(fig_monthly_video, use_container_width=True)
     
@@ -343,10 +345,10 @@ try:
                 xaxis_title="주차",
                 yaxis_title="제작량 (개)",
                 hovermode='x unified',
-                font=dict(size=14),
-                xaxis=dict(title_font=dict(size=16)),
-                yaxis=dict(rangemode='tozero', title_font=dict(size=16)),
-                legend=dict(font=dict(size=12))
+                font=dict(size=16),
+                xaxis=dict(title_font=dict(size=18)),
+                yaxis=dict(rangemode='tozero', title_font=dict(size=18)),
+                legend=dict(font=dict(size=14))
             )
             st.plotly_chart(fig_weekly_image, use_container_width=True)
         
@@ -375,10 +377,10 @@ try:
                 xaxis_title="주차",
                 yaxis_title="제작량 (개)",
                 hovermode='x unified',
-                font=dict(size=14),
-                xaxis=dict(title_font=dict(size=16)),
-                yaxis=dict(rangemode='tozero', title_font=dict(size=16)),
-                legend=dict(font=dict(size=12))
+                font=dict(size=16),
+                xaxis=dict(title_font=dict(size=18)),
+                yaxis=dict(rangemode='tozero', title_font=dict(size=18)),
+                legend=dict(font=dict(size=14))
             )
             st.plotly_chart(fig_weekly_video, use_container_width=True)
     
