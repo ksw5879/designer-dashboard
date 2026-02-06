@@ -694,7 +694,7 @@ try:
                 
                 # 그래프 생성
                 fig, person_year_stats = create_person_graph(person['이름'], person_year, selected_month_period)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key=f"image_{person['이름']}_graph")
                 
                 # 년도 데이터 표 (가로 레이아웃)
                 st.markdown("**📊 월별 제작량**")
@@ -805,7 +805,7 @@ try:
                 
                 # 그래프 생성
                 fig, person_year_stats = create_person_graph(person['이름'], person_year, selected_month_period)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key=f"video_{person['이름']}_graph")
                 
                 # 년도 데이터 표 (가로 레이아웃)
                 st.markdown("**📊 월별 제작량**")
