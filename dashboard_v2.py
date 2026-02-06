@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 st.title("📊 디자이너 리소스 관리 대시보드")
-st.markdown("<p style='text-align: center; color: #888; font-size: 0.9em; margin-top: -10px;'>제작자 : 마케팅 사업부 3팀 부팀장 김성웅</p>", unsafe_allow_html=True)
+st.markdown("<p style='color: #888; font-size: 0.9em; margin-top: -10px;'>제작자 : 마케팅 사업부 3팀 부팀장 김성웅</p>", unsafe_allow_html=True)
 
 # 디자이너 분류 (3팀 전용)
 TEAM_3_IMAGE_DESIGNERS = ["박유정", "권지연", "안서현", "도혜진", "김성웅"]
