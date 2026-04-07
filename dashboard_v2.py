@@ -76,10 +76,10 @@ try:
     
     # 병합 셀 처리: 날짜와 제작자 빈칸 채우기
     df['날짜'] = df['날짜'].replace('', None)
-    df['날짜'] = df['날짜'].fillna(method='ffill')
+    df['날짜'] = df['날짜'].ffill()
     
     df['제작자'] = df['제작자'].replace('', None)
-    df['제작자'] = df['제작자'].fillna(method='ffill')
+    df['제작자'] = df['제작자'].ffill()
     
     # 데이터 전처리
     # 1. 날짜가 비어있지 않은 행만 (ffill 이후)
