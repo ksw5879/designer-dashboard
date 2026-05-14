@@ -17,7 +17,7 @@ st.markdown("<p style='color: #888; font-size: 0.9em; margin-top: -10px;'>제작
 
 # 디자이너 분류 (3팀 전용)
 TEAM_3_IMAGE_DESIGNERS = ["박유정", "권지연", "안서현", "도혜진", "김성웅"]
-TEAM_3_VIDEO_DESIGNERS = ["은누리", "박시은", "이재호", "이현성"]
+TEAM_3_VIDEO_DESIGNERS = ["은누리", "박시은", "이재호", "이현성", "이소정"]
 
 # 나중에 다른 팀 추가 시 여기 추가
 TEAM_DESIGNERS = {
